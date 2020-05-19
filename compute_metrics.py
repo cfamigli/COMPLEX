@@ -7,17 +7,18 @@ import glob
 import os
 import sys
 import warnings
+from datetime import date
 
 #warnings.filterwarnings('ignore')
 
 def main():
-    version = 'v1.3'
+    version = sys.argv[1]
     os.chdir('../data/COMPLEX_' + version)
     models = sorted([model for model in os.listdir(".")])
     models = [el for el in models if el[0]!='.']
     print(models)
 
-    var = sys.argv[1]
+    var = sys.argv[2]
 
     COMPLEX = DataFrame()
     for model in models:
@@ -84,7 +85,7 @@ def main():
 
     os.chdir('..')
     COMPLEX = COMPLEX.T
-    COMPLEX.to_pickle('analysis_outputs/' + version + '_' + var + '_042720.pkl')
+    COMPLEX.to_pickle('analysis_outputs/' + version + '_' + var + '_' + date.today().strftime("%m%d%y") + '.pkl')
     return
 
 if __name__=='__main__':
