@@ -7,7 +7,7 @@ import seaborn as sns
 
 def main():
     os.chdir('../data/analysis_outputs')
-    v1 = read_pickle('v1.3_NEE_042720.pkl')
+    v1 = read_pickle('v1.4_NEE_052020.pkl')
 
     models = ['C1','C2','C3','C4','C5','C6','C7','C8','E1','G1','G2','G3','G4','S1','S2','S4']
     var = 'NEE'

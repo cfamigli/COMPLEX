@@ -45,6 +45,33 @@ def raw_complexity():
         ['G1',37],['G2',40],['G3',43],['G4',43],['S1',11],['S2',14],['S4',17]]
     return DataFrame(data,columns=['models','npars'])
 
+def processes_discrete(model=None):
+    data = [['C1',0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
+            ['C2',1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C3',1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C4',1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C5',1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
+            ['C6',0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['C7',1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
+            ['C8',1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
+            ['E1',0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
+            ['G1',0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G2',1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['G3',0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G4',1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['S1',0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
+            ['S2',0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
+            ['S4',0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
+
+    return_df = DataFrame(data,columns=['model','PAW','Rh','labile_c_lifespan','phenology','CUE',
+            'photosynthesis_module','stomatal_conductance','n_DOM_pool','n_live_C_pool',
+            'n_water_pool','total_pool','water_stress_on_GPP'])
+
+    if model is not None:
+        return_df = return_df[return_df['model']==model]
+
+    return return_df
+
 def get_experiments(type='all'):
     if type=='numeric':
         experiments = []
@@ -124,17 +151,19 @@ def calc_R2_RMSE(obs_data, pred_data):
 def append_to_df(df, model, site_EDC, experiment, good_flag, dimensionality,
     hist_int_calibration, hist_int_forecast, R2_calibration, R2_forecast,
     RMSE_calibration, RMSE_forecast, nee_bool):
+    processes = processes_discrete(model=model)
+
     # returns dataframe that will comtain all COMPLEX trials (columns) and metrics (rows)
-    df = DataFrame(data=[good_flag, dimensionality, hist_int_calibration, hist_int_forecast,
-        R2_calibration, R2_forecast, RMSE_calibration, RMSE_forecast, nee_bool],
+    df = DataFrame(data=np.append([good_flag, dimensionality, hist_int_calibration, hist_int_forecast,
+        R2_calibration, R2_forecast, RMSE_calibration, RMSE_forecast, nee_bool], processes.iloc[0,1:].values).astype(np.float),
         columns=[model + '_' + site_EDC + '_' + experiment],
         index=['good_flag', 'dimensionality', 'hist_int_calibration', 'hist_int_forecast',
-        'R2_calibration', 'R2_forecast', 'RMSE_calibration', 'RMSE_forecast', 'nee']) if df.empty else df.join(
-        DataFrame(data=[good_flag, dimensionality, hist_int_calibration, hist_int_forecast,
-        R2_calibration, R2_forecast, RMSE_calibration, RMSE_forecast, nee_bool],
+        'R2_calibration', 'R2_forecast', 'RMSE_calibration', 'RMSE_forecast', 'nee'] + list(processes)[1:]) if df.empty else df.join(
+        DataFrame(data=np.append([good_flag, dimensionality, hist_int_calibration, hist_int_forecast,
+        R2_calibration, R2_forecast, RMSE_calibration, RMSE_forecast, nee_bool], processes.iloc[0,1:].values).astype(np.float),
         columns=[model + '_' + site_EDC + '_' + experiment],
         index=['good_flag', 'dimensionality', 'hist_int_calibration', 'hist_int_forecast',
-        'R2_calibration', 'R2_forecast', 'RMSE_calibration', 'RMSE_forecast', 'nee']))
+        'R2_calibration', 'R2_forecast', 'RMSE_calibration', 'RMSE_forecast', 'nee'] + list(processes)[1:]))
     return df
 
 def plot_time_series(obs_data, pred_data, model=None):

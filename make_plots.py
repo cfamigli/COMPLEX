@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 
 def main():
     os.chdir('../data/analysis_outputs')
-    data = read_pickle('v1.2_NEE_040320.pkl')
+    data = read_pickle('v1.4_LAI_052020.pkl')
 
-    var = 'NEE'
+    var = 'LAI'
 
     #data = v1_3.loc[~np.isnan(v1_3['dimensionality'])]
     print('running for full dataset')
