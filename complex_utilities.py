@@ -438,6 +438,18 @@ def plot_scatter_x_performance_y_dimensionality(df, list_of_subsets, xstr='calib
     plt.close()
     return
 
+def plot_scatter_x_process_y_skill(df, process='', ystr='forecast', metric='hist_int', subset='', var='NEE'):
+    process_values = np.unique(df[process].dropna().values)
+    plt.figure(figsize=(5/2*len(process_values),5))
+    sns.set_style('white')
+    ax = sns.violinplot(x=process, y=metric+'_'+ystr, data=df, palette=sns.hls_palette(5, h=.5, l=.7),
+        cut=0, linewidth=1, width=0.75, scale_hue=False)
+    plt.axes().yaxis.grid(zorder=0, color='gainsboro')
+    plt.ylim([0,None])
+    plt.savefig('../../plots/scatters/processes/' + var + '/' + process + '_' + metric + '_' + ystr + '_' + subset + '.pdf')
+    plt.close()
+    return
+
 def run_plots(df, subset_str='', var='NEE'):
     plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var)
     plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='diff', subset=subset_str, ylim=[-0.3,0.3], var=var)

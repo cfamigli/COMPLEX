@@ -1,5 +1,6 @@
 
 import os
+import sys
 import numpy as np
 from pandas import read_pickle, DataFrame
 import complex_utilities as computil
@@ -9,9 +10,13 @@ import matplotlib.pyplot as plt
 
 def main():
     os.chdir('../data/analysis_outputs')
-    data = read_pickle('v1.4_LAI_052020.pkl')
 
-    var = 'LAI'
+    version = sys.argv[1]
+    var = sys.argv[2]
+    date = '052120'
+
+    dataset_str = version + '_' + var + '_' + date + '.pkl'
+    data = read_pickle(dataset_str)
 
     #data = v1_3.loc[~np.isnan(v1_3['dimensionality'])]
     print('running for full dataset')
@@ -26,8 +31,6 @@ def main():
     computil.run_plots(data_no_nee_subset, subset_str='obs_no_nee_only', var=var)
 
     model_list = ['C1','C2','C3','C4','C5','C6','C7','C8','E1','G1','G2','G3','G4','S1','S2','S4']
-
-    print(model_list)
 
     # <><><><><><><><><><><><><><><><><><><><>
     # <><><><> COMPLEXITY vs ACCURACY <><><><>
@@ -96,6 +99,15 @@ def main():
         for model in model_list:
             to_plot = computil.subset_list_by_substring(experiments, model)
             computil.run_plots(data.loc[to_plot], subset_str=model + '_' + experiment, var=var)
+
+    # <><><><><><><><><><><><><><><><><><><>
+    # <><><><> PROCESS vs ACCURACY <><><><>
+    # <><><><><><><><><><><><><><><><><><><>
+
+    for process in data.columns[9:]:
+        computil.plot_scatter_x_process_y_skill(data, process=process, ystr='forecast', metric='hist_int', var=var)
+        computil.plot_scatter_x_process_y_skill(data.loc[computil.subset_df_by_substring(data, '_EDC')],
+            process=process, ystr='forecast', metric='hist_int', subset='EDCs', var=var)
 
     # <><><><><><><><><><><><><><><><><><><>
     # <><><><> ACCURACY vs ACCURACY <><><><>

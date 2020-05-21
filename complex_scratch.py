@@ -44,9 +44,9 @@ def run_plots(df, subset_str=''):
     return
 
 def main():
-    v1_2 = read_pickle('../data/analysis_outputs/v1.2_LAI_040320.pkl')
+    data = read_pickle('../data/analysis_outputs/v1.4_LAI_052120.pkl')
 
-    var = 'LAI'
+    var = 'NEE'
 
     xstr = 'calibration'
     ystr = 'forecast'
@@ -55,57 +55,59 @@ def main():
 
     model_list = ['C1','C2','C3','C4','C6','C8','E1','G1','G2','G3','G4','S1','S2','S4']
 
-    v1_2_nee_subset = v1_2.loc[v1_2['nee']==1]
-    print('running for nee only')
-    computil.plot_scatter_x_dimensionality_y(v1_2_nee_subset, metric='RMSE', ystr='forecast', subset='nee_only', ylim=[0,6], var=var)
+    computil.plot_scatter_x_process_y_skill(data, process='n_DOM_pool', ystr='forecast', metric='hist_int')
 
-    v1_2_no_nee_subset = v1_2.loc[(v1_2['nee']==0) & ~(v1_2.index.str.endswith('f'))]
+    '''data_nee_subset = data.loc[data['nee']==1]
+    print('running for nee only')
+    computil.plot_scatter_x_dimensionality_y(data_nee_subset, metric='RMSE', ystr='forecast', subset='nee_only', ylim=[0,6], var=var)
+
+    data_no_nee_subset = data.loc[(data['nee']==0) & ~(data.index.str.endswith('f'))]
     print('running for other obs only')
-    computil.plot_scatter_x_dimensionality_y(v1_2_no_nee_subset, metric='RMSE', ystr='forecast', subset='obs_no_nee_only', ylim=[0,6], var=var)
+    computil.plot_scatter_x_dimensionality_y(data_no_nee_subset, metric='RMSE', ystr='forecast', subset='obs_no_nee_only', ylim=[0,6], var=var)
 
     ylim = [7,7,7,7,7,50]
     count = 0
     for experiment_letter in ['a','b','c','d','e','f']:
-        to_plot = v1_2[v1_2.index.str.endswith(experiment_letter)]
+        to_plot = data[data.index.str.endswith(experiment_letter)]
         print(to_plot)
         computil.plot_scatter_x_dimensionality_y(to_plot, metric='RMSE', ystr='forecast', subset='exp' + experiment_letter, ylim=[0,ylim[count]], var=var)
         count += 1
 
-    v1_2 = read_pickle('../../data/analysis_outputs/v1.2_NEE_040320.pkl')
+    data = read_pickle('../../data/analysis_outputs/v1.2_NEE_040320.pkl')
 
     var = 'NEE'
 
-    v1_2_nee_subset = v1_2.loc[v1_2['nee']==1]
+    data_nee_subset = data.loc[data['nee']==1]
     print('running for nee only')
-    computil.plot_scatter_x_dimensionality_y(v1_2_nee_subset, metric='RMSE', ystr='forecast', subset='nee_only', ylim=[0,10], var=var)
+    computil.plot_scatter_x_dimensionality_y(data_nee_subset, metric='RMSE', ystr='forecast', subset='nee_only', ylim=[0,10], var=var)
 
-    v1_2_no_nee_subset = v1_2.loc[(v1_2['nee']==0) & ~(v1_2.index.str.endswith('f'))]
+    data_no_nee_subset = data.loc[(data['nee']==0) & ~(data.index.str.endswith('f'))]
     print('running for other obs only')
-    computil.plot_scatter_x_dimensionality_y(v1_2_no_nee_subset, metric='RMSE', ystr='forecast', subset='obs_no_nee_only', ylim=[0,10], var=var)
+    computil.plot_scatter_x_dimensionality_y(data_no_nee_subset, metric='RMSE', ystr='forecast', subset='obs_no_nee_only', ylim=[0,10], var=var)
 
     ylim = [5, 5, 5, 10, 5, 7]
     count = 0
     for experiment_letter in ['a','b','c','d','e','f']:
-        to_plot = v1_2[v1_2.index.str.endswith(experiment_letter)]
+        to_plot = data[data.index.str.endswith(experiment_letter)]
         print(to_plot)
         computil.plot_scatter_x_dimensionality_y(to_plot, metric='RMSE', ystr='forecast', subset='exp' + experiment_letter, ylim=[0,ylim[count]], var=var)
-        count += 1
+        count += 1'''
 
 
-    '''computil.plot_scatter_x_performance_y_dimensionality(v1_2,
+    '''computil.plot_scatter_x_performance_y_dimensionality(data,
         ['_EDC', '_noEDC'], xstr=xstr, ystr=ystr, subset='EDCs_test')
 
-    computil.plot_scatter_x_performance_y_dimensionality(v1_2,
+    computil.plot_scatter_x_performance_y_dimensionality(data,
         ['nee', 'no_nee'], xstr=xstr, ystr=ystr, subset='nee')
 
-    computil.plot_scatter_x_performance_y_dimensionality(v1_2,
+    computil.plot_scatter_x_performance_y_dimensionality(data,
         model_list, xstr=xstr, ystr=ystr, subset='models')
 
-    computil.plot_scatter_x_performance_y_dimensionality(v1_2,
+    computil.plot_scatter_x_performance_y_dimensionality(data,
         ['nee_EDC', 'no_nee_noEDC'], xstr=xstr, ystr=ystr, subset='nee_EDC')
 
-    computil.plot_scatter_x_dimensionality_y_resampled(v1_2,metric='hist_int', ystr='forecast', subset='', ylim=[0,0.6])
-    computil.plot_scatter_x_dimensionality_y_resampled(v1_2,metric='hist_int', ystr='diff', subset='', ylim=[-0.3,0.3])'''
+    computil.plot_scatter_x_dimensionality_y_resampled(data,metric='hist_int', ystr='forecast', subset='', ylim=[0,0.6])
+    computil.plot_scatter_x_dimensionality_y_resampled(data,metric='hist_int', ystr='diff', subset='', ylim=[-0.3,0.3])'''
 
     return
 
