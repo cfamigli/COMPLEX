@@ -46,24 +46,24 @@ def raw_complexity():
     return DataFrame(data,columns=['models','npars'])
 
 def processes_discrete(model=None):
-    data = [['C1',0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
-            ['C2',1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C3',1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C4',1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C5',1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
-            ['C6',0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['C7',1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
-            ['C8',1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
-            ['E1',0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
-            ['G1',0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G2',1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['G3',0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G4',1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['S1',0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
-            ['S2',0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
-            ['S4',0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
+    data = [['C1',23.,0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
+            ['C2',33.,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C3',35.,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C4',34.,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C5',34.,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
+            ['C6',23.,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['C7',46.,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
+            ['C8',36.,1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
+            ['E1',17.,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
+            ['G1',37.,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G2',40.,1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['G3',43.,0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G4',43.,1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['S1',11.,0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
+            ['S2',14.,0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
+            ['S4',17.,0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
 
-    return_df = DataFrame(data,columns=['model','PAW','Rh','labile_c_lifespan','phenology','CUE',
+    return_df = DataFrame(data,columns=['model','n_parameters','PAW','Rh','labile_c_lifespan','phenology','CUE',
             'photosynthesis_module','stomatal_conductance','n_DOM_pool','n_live_C_pool',
             'n_water_pool','total_pool','water_stress_on_GPP'])
 
@@ -440,12 +440,15 @@ def plot_scatter_x_performance_y_dimensionality(df, list_of_subsets, xstr='calib
 
 def plot_scatter_x_process_y_skill(df, process='', ystr='forecast', metric='hist_int', subset='', var='NEE'):
     process_values = np.unique(df[process].dropna().values)
-    plt.figure(figsize=(5/2*len(process_values),5))
+    plt.figure(figsize=(5/4*len(process_values),5))
     sns.set_style('white')
-    ax = sns.violinplot(x=process, y=metric+'_'+ystr, data=df, palette=sns.hls_palette(5, h=.5, l=.7),
-        cut=0, linewidth=1, width=0.75, scale_hue=False)
-    plt.axes().yaxis.grid(zorder=0, color='gainsboro')
+    ax = sns.boxplot(x=process, y=metric+'_'+ystr, data=df, width=0.6, linewidth=0.75, palette=sns.light_palette('royalblue',len(process_values)),
+        flierprops=dict(marker='.', markerfacecolor='k', markersize=3, markeredgecolor=None))
+    plt.setp(ax.artists, edgecolor='k')
+    plt.setp(ax.lines, color='k')
+    plt.axes().yaxis.grid(zorder=0, color='gainsboro', alpha=0.5)
     plt.ylim([0,None])
+    plt.tight_layout()
     plt.savefig('../../plots/scatters/processes/' + var + '/' + process + '_' + metric + '_' + ystr + '_' + subset + '.pdf')
     plt.close()
     return

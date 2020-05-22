@@ -13,7 +13,7 @@ def main():
 
     version = sys.argv[1]
     var = sys.argv[2]
-    date = '052120'
+    date = '052220'
 
     dataset_str = version + '_' + var + '_' + date + '.pkl'
     data = read_pickle(dataset_str)
@@ -36,7 +36,7 @@ def main():
     # <><><><> COMPLEXITY vs ACCURACY <><><><>
     # <><><><><><><><><><><><><><><><><><><><>
 
-    model_pars = computil.raw_complexity()
+    '''model_pars = computil.raw_complexity()
     average_metric = []
     std_metric = []
     absolute_complexity = []
@@ -98,7 +98,7 @@ def main():
         experiments = computil.subset_df_by_substring(data, experiment)
         for model in model_list:
             to_plot = computil.subset_list_by_substring(experiments, model)
-            computil.run_plots(data.loc[to_plot], subset_str=model + '_' + experiment, var=var)
+            computil.run_plots(data.loc[to_plot], subset_str=model + '_' + experiment, var=var)'''
 
     # <><><><><><><><><><><><><><><><><><><>
     # <><><><> PROCESS vs ACCURACY <><><><>

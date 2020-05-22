@@ -44,7 +44,7 @@ def run_plots(df, subset_str=''):
     return
 
 def main():
-    data = read_pickle('../data/analysis_outputs/v1.4_LAI_052120.pkl')
+    data = read_pickle('../data/analysis_outputs/v1.4_NEE_052220.pkl')
 
     var = 'NEE'
 
@@ -55,7 +55,7 @@ def main():
 
     model_list = ['C1','C2','C3','C4','C6','C8','E1','G1','G2','G3','G4','S1','S2','S4']
 
-    computil.plot_scatter_x_process_y_skill(data, process='n_DOM_pool', ystr='forecast', metric='hist_int')
+    computil.plot_scatter_x_process_y_skill(data, process='n_parameters', ystr='forecast', metric='hist_int', var='NEE')
 
     '''data_nee_subset = data.loc[data['nee']==1]
     print('running for nee only')
