@@ -310,47 +310,6 @@ def plot_scatter_x_performance_y(df, xstr='calibration', ystr='forecast',
     plt.close()
     return
 
-def plot_scatter_x_performance_y_multicolor(df, list_of_subsets, xstr='calibration', ystr='forecast',
-    metric='hist_int', subset='', var='NEE'):
-    plt.figure(figsize=(5,5))
-    for el in list_of_subsets:
-        to_plot = subset_df_by_substring(df, el)
-        df_el = df.loc[to_plot]
-        x = df_el[metric + '_' + xstr].values
-        col = df_el['dimensionality'].values
-
-        if (ystr=='diff'):
-            y = df_el[metric + '_forecast'].values - df_el[metric + '_calibration'].values
-        else:
-            y = df_el[metric + '_' + ystr].values
-
-        if 'nee' not in subset:
-            sc = plt.scatter(x, y, edgecolor="None", marker='.', alpha=0.2, zorder=0) #color='gainsboro',
-            plt.scatter(np.nanmean(x), np.nanmean(y), color=sc.get_facecolors(),
-                edgecolor='black', linewidth=1.5, marker='o', s=100, alpha=1, label=el.replace('_',''))
-        else:
-            sc = plt.scatter(x, y, c='lightgray', edgecolor="None", marker='o', alpha=0.5, zorder=0) #color='gainsboro',
-            plt.title(subset)
-
-        if metric=='hist_int':
-            plt.ylabel('histogram overlap (%s)' % ystr)
-            plt.xlabel('histogram overlap (%s)' % xstr)
-        else:
-            plt.ylabel(metric + '_' + ystr)
-            plt.xlabel(metric + '_' + xstr)
-
-        plt.legend(loc='best', frameon=False)
-    if (ystr=='diff'):
-        plt.axhline(0, c='k', linewidth=0.5, zorder=0)
-    else:
-        plt.plot((0,1), c='k', linewidth=0.5, zorder=0)
-        plt.xlim([0, 0.8])
-        plt.ylim([0, 0.8])
-
-    plt.savefig('../../plots/scatters/performance/' + var + '/' + 'multicolor_base_' + metric + '_' + xstr + '_' + metric + '_' + ystr + '_' + subset + '.pdf')
-    plt.close()
-    return
-
 def plot_scatter_x_performance_y_dimensionality(df, list_of_subsets, xstr='calibration', ystr='forecast',
     metric='hist_int', subset='', var='NEE'):
     fig, ax = plt.subplots(1, len(list_of_subsets), figsize=(6*len(list_of_subsets),5))
@@ -444,12 +403,23 @@ def plot_scatter_x_process_y_skill(df, process='', ystr='forecast', metric='hist
     sns.set_style('white')
     ax = sns.boxplot(x=process, y=metric+'_'+ystr, data=df, width=0.6, linewidth=0.75, palette=sns.light_palette('royalblue',len(process_values)),
         flierprops=dict(marker='.', markerfacecolor='k', markersize=3, markeredgecolor=None))
+    medians = df.groupby([process])[metric+'_'+ystr].median()
     plt.setp(ax.artists, edgecolor='k')
     plt.setp(ax.lines, color='k')
     plt.axes().yaxis.grid(zorder=0, color='gainsboro', alpha=0.5)
     plt.ylim([0,None])
     plt.tight_layout()
-    plt.savefig('../../plots/scatters/processes/' + var + '/' + process + '_' + metric + '_' + ystr + '_' + subset + '.pdf')
+    plt.savefig('../../plots/processes/' + var + '/' + process + '_' + metric + '_' + ystr + '_' + subset + '.pdf')
+    plt.close()
+    return medians
+
+def plot_scatter_x_maxdiff_y_process(max_diff, processes, ystr='forecast', metric='hist_int', subset='', var='NEE'):
+    max_diff, processes = zip(*sorted(zip(max_diff, processes)))
+    plt.figure(figsize=(7,6))
+    plt.barh(processes, max_diff, height=0.5, color='lightsteelblue', edgecolor='black', linewidth=0.75)#scatter(max_diff, np.arange(len(max_diff)))
+    plt.xlabel('Maximum difference in median forecast skill between classes')
+    plt.tight_layout()
+    plt.savefig('../../plots/processes/' + var + '/max_diff_' + metric + '_' + ystr + '_' + subset + '.pdf')
     plt.close()
     return
 
