@@ -404,7 +404,7 @@ def plot_scatter_x_process_y_skill(df, process='', ystr='forecast', metric='hist
     ax = sns.boxplot(x=process, y=metric+'_'+ystr, data=df, width=0.6, linewidth=0.75, palette=sns.light_palette('royalblue',len(process_values)),
         flierprops=dict(marker='.', markerfacecolor='k', markersize=3, markeredgecolor=None))
     medians = df.groupby([process])[metric+'_'+ystr].median()
-    plt.setp(ax.artists, edgecolor='k')
+    plt.setp(ax.artists, edgecolor='k', s=40)
     plt.setp(ax.lines, color='k')
     plt.axes().yaxis.grid(zorder=0, color='gainsboro', alpha=0.5)
     plt.ylim([0,None])
@@ -440,27 +440,74 @@ def run_plots(df, subset_str='', var='NEE'):
     return
 
 def plot_density(df, subset_main='', subset_sub='', title='', subset_sub_list=[], var='NEE'):
-    plt.figure(figsize=(5,5))
+    plt.figure(figsize=(8,5))
     to_plot_main = subset_df_by_substring(df, subset_main)
     sns.distplot(df.loc[to_plot_main]['dimensionality'],
         hist=False, kde=True, color='k', kde_kws={'bw':1, 'linewidth':2}, label='all data')
+    #plt.axvline(df.loc[to_plot_main]['dimensionality'].mean(), color='k', linestyle='--', linewidth=0.5)
     if len(subset_sub_list)==0:
-        for sub in subset_sub:
-            to_plot_sub = subset_list_by_substring(to_plot_main, sub)
-            sns.distplot(df.loc[to_plot_sub]['dimensionality'],
-                hist=False, kde=True, kde_kws={'bw':1, 'linewidth':1}, label=sub.replace('_',''))
+        if title=='let_exp':
+            for sub in subset_sub:
+                to_plot_sub = [str for str in to_plot_main if str.endswith(sub)]
+                sns.distplot(df.loc[to_plot_sub]['dimensionality'],
+                    hist=False, kde=True, kde_kws={'bw':1, 'linewidth':1, 'zorder':0}, label=sub.replace('_',''))
+                #plt.axvline(df.loc[to_plot_sub]['dimensionality'].mean(), color=plt.gca().get_lines()[-1].get_c(), linestyle='--', linewidth=0.5)
+        else:
+            for sub in subset_sub:
+                to_plot_sub = subset_list_by_substring(to_plot_main, sub)
+                sns.distplot(df.loc[to_plot_sub]['dimensionality'],
+                    hist=False, kde=True, kde_kws={'bw':1, 'linewidth':1, 'zorder':0}, label=sub.replace('_',''))
+                #plt.axvline(df.loc[to_plot_sub]['dimensionality'].mean(), color=plt.gca().get_lines()[-1].get_c(), linestyle='--', linewidth=0.5)
     else:
         lbls = ['nee', 'no nee']
         count = 0
         for el in subset_sub_list:
             to_plot_sub = subset_list_by_list_of_substrings(to_plot_main, el)
             sns.distplot(df.loc[to_plot_sub]['dimensionality'],
-                hist=False, kde=True, kde_kws={'bw':1, 'linewidth':1}, label=lbls[count])
+                hist=False, kde=True, kde_kws={'bw':1, 'linewidth':1.5, 'zorder':0}, label=lbls[count])
+            #plt.axvline(df.loc[to_plot_sub]['dimensionality'].mean(), color=plt.gca().get_lines()[-1].get_c(), linestyle='--', linewidth=0.5)
             count += 1
-    plt.ylabel('density')
-    plt.legend(loc='best')
+    plt.ylabel('Density')
+    plt.ylim([0,None])
+    plt.legend(loc='best', frameon=False, prop={'size': 8})
     plt.title(subset_main)
     plt.tight_layout()
     plt.savefig('../../plots/dists/' + var + '/' + subset_main + '_' + title + '.pdf')
+    plt.close()
+    return
+
+def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', subset_sub_list=[], var='NEE'):
+    plt.figure(figsize=(8,8))
+
+    pars = raw_complexity()
+
+    model_count = 0
+    for i in subset_main:
+        to_plot_main = subset_df_by_substring(df, i)
+        sns.set_palette(sns.color_palette("Set2", len(subset_sub)))
+        #plt.scatter(df.loc[to_plot_main]['dimensionality'].mean(), model_count, color='white', edgecolor='k', s=80, alpha=0.85, label='Mean of all runs' if model_count==len(subset_main)-1 else "")
+        plt.scatter(pars[pars['models']==i]['npars'], model_count, marker='*', color='white', edgecolor='k', s=120, label='Number of parameters' if model_count==len(subset_main)-1 else "")
+
+        if len(subset_sub_list)==0:
+            if title=='let_exp':
+                for sub in subset_sub:
+                    to_plot_sub = [str for str in to_plot_main if str.endswith(sub)]
+                    plt.scatter(df.loc[to_plot_sub]['dimensionality'].mean(), model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+            else:
+                for sub in subset_sub:
+                    to_plot_sub = subset_list_by_substring(to_plot_main, sub)
+                    plt.scatter(df.loc[to_plot_sub]['dimensionality'].mean(), model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+
+        plt.axhline(y=model_count+0.5, color='gainsboro', linewidth=0.5)
+
+        model_count += 1
+
+    plt.ylim([-0.5,model_count-0.5])
+    plt.ylabel('Model')
+    plt.xlabel('Dimensionality')
+    plt.yticks(np.arange(model_count), subset_main)
+    plt.legend(loc='lower right', facecolor='white', edgecolor='white', framealpha=1, prop={'size': 8})
+    plt.tight_layout()
+    plt.savefig('../../plots/dists/' + var + '/summary_' + title + '.pdf')
     plt.close()
     return
