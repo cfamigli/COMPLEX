@@ -476,38 +476,61 @@ def plot_density(df, subset_main='', subset_sub='', title='', subset_sub_list=[]
     plt.close()
     return
 
-def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', subset_sub_list=[], var='NEE'):
-    plt.figure(figsize=(8,8))
+def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', subset_sub_list=[], var='NEE', zero_point='default', fractional=False):
+    plt.figure(figsize=(7,7))
 
     pars = raw_complexity()
 
     model_count = 0
     for i in subset_main:
         to_plot_main = subset_df_by_substring(df, i)
+
+        if zero_point=='default':
+            normalize_val_diff = 0
+            normalize_val_div = 1
+        elif zero_point=='npars':
+            normalize_val_diff = pars[pars['models']==i]['npars']
+            normalize_val_div = normalize_val_diff/100 if fractional else 1
+        elif zero_point=='prior':
+            normalize_val_diff = df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean()
+            normalize_val_div = normalize_val_diff/100 if fractional else 1
+
         sns.set_palette(sns.color_palette("Set2", len(subset_sub)))
         #plt.scatter(df.loc[to_plot_main]['dimensionality'].mean(), model_count, color='white', edgecolor='k', s=80, alpha=0.85, label='Mean of all runs' if model_count==len(subset_main)-1 else "")
-        plt.scatter(pars[pars['models']==i]['npars'], model_count, marker='*', color='white', edgecolor='k', s=120, label='Number of parameters' if model_count==len(subset_main)-1 else "")
+
+        if zero_point!='prior':
+            plt.scatter((pars[pars['models']==i]['npars'] - normalize_val_diff)/normalize_val_div, model_count, marker='*', color='white', edgecolor='k', s=120, label='Number of parameters' if model_count==len(subset_main)-1 else "")
+
+        plt.scatter((df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div, model_count, marker='D', color='white', edgecolor='k', s=50, label='Prior' if model_count==len(subset_main)-1 else "")
 
         if len(subset_sub_list)==0:
             if title=='let_exp':
                 for sub in subset_sub:
                     to_plot_sub = [str for str in to_plot_main if str.endswith(sub)]
-                    plt.scatter(df.loc[to_plot_sub]['dimensionality'].mean(), model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+                    plt.scatter((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div, model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
             else:
                 for sub in subset_sub:
                     to_plot_sub = subset_list_by_substring(to_plot_main, sub)
-                    plt.scatter(df.loc[to_plot_sub]['dimensionality'].mean(), model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+                    plt.scatter((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div, model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
 
         plt.axhline(y=model_count+0.5, color='gainsboro', linewidth=0.5)
 
         model_count += 1
 
     plt.ylim([-0.5,model_count-0.5])
+    plt.xlim([5,None]) if zero_point=='default' else plt.xlim([None,None])
     plt.ylabel('Model')
-    plt.xlabel('Dimensionality')
+    if zero_point=='default':
+        plt.xlabel('Dimensionality')
+    else:
+        if fractional:
+            plt.xlabel('Percent dimensionality reduction from prior')
+        else:
+            plt.xlabel('Dimensionality reduction')
     plt.yticks(np.arange(model_count), subset_main)
-    plt.legend(loc='lower right', facecolor='white', edgecolor='white', framealpha=1, prop={'size': 8})
+    loc = 'lower right' if zero_point=='default' else 'best'
+    plt.legend(loc=loc, facecolor='white', edgecolor='black', framealpha=1, prop={'size': 9})
     plt.tight_layout()
-    plt.savefig('../../plots/dists/' + var + '/summary_' + title + '.pdf')
+    plt.savefig('../../plots/dists/' + var + '/summary_' + title + '_' + zero_point + '_' + str(fractional) + '.pdf')
     plt.close()
     return

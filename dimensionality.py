@@ -16,7 +16,7 @@ def main():
     dataset_str = version + '_' + var + '_' + date + '.pkl'
     data = read_pickle(dataset_str)
 
-    models = ['C1','C2','C3','C4','C5','C6','C7','C8','E1','G1','G2','G3','G4','S1','S2','S4']
+    models = computil.raw_complexity().sort_values('npars')['models']
     for model in models:
         computil.plot_density(data, subset_main=model, subset_sub=['_EDC','_noEDC'], title='EDC', var=var)
 
@@ -34,8 +34,14 @@ def main():
             subset_sub_list=[nee_experiments, no_nee_experiments], var=var)
 
     computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=['_EDC','_noEDC'], title='EDC', var=var)
+    computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=['_EDC','_noEDC'], title='EDC', var=var, zero_point='prior')
+    computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=['_EDC','_noEDC'], title='EDC', var=var, zero_point='prior', fractional=True)
     computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=numeric_experiments, title='num_exp', var=var)
+    computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=numeric_experiments, title='num_exp', var=var, zero_point='prior')
+    computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=numeric_experiments, title='num_exp', var=var, zero_point='prior', fractional=True)
     computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=letter_experiments, title='let_exp',  var=var)
+    computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=letter_experiments, title='let_exp',  var=var, zero_point='prior')
+    computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=letter_experiments, title='let_exp',  var=var, zero_point='prior', fractional=True)
     return
 
 if __name__=='__main__':
