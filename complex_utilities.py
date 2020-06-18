@@ -41,7 +41,7 @@ def site_years():
     return DataFrame(data,columns=['sites','nyears'])
 
 def raw_complexity():
-    data = [['C1',23],['C2',33],['C3',35],['C4',34],['C5',34],['C6',23],['C7',46],['C8',36],['E1',17],
+    data = [['C1',23],['C2',33],['C3',35],['C4',34],['C5',34],['C6',23],['C7',27],['C8',36],['E1',17],
         ['G1',37],['G2',40],['G3',43],['G4',43],['S1',11],['S2',14],['S4',17]]
     return DataFrame(data,columns=['models','npars'])
 
@@ -52,7 +52,7 @@ def processes_discrete(model=None):
             ['C4',34.,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
             ['C5',34.,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
             ['C6',23.,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['C7',46.,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
+            ['C7',27.,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
             ['C8',36.,1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
             ['E1',17.,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
             ['G1',37.,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
@@ -534,3 +534,49 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
     plt.savefig('../../plots/dists/' + var + '/summary_' + title + '_' + zero_point + '_' + str(fractional) + '.pdf')
     plt.close()
     return
+
+def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE'):
+    plt.figure(figsize=(7,9))
+    model_count = 0
+
+    cmap = matplotlib.cm.get_cmap('Set2')
+
+    for i in subset_main:
+        to_plot_main = subset_df_by_substring(df, i)
+
+        normalize_val_diff = df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean()
+        normalize_val_div = normalize_val_diff/100
+
+        EDC = ['_EDC', '_noEDC']
+        EDC_spread = []
+        for con in EDC:
+            to_plot_sub = subset_list_by_substring(to_plot_main, con)
+            EDC_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+
+        letter_experiments = ['a', 'b', 'c', 'd', 'e', 'f']
+        let_spread = []
+        for let in letter_experiments:
+            to_plot_sub = [str for str in to_plot_main if str.endswith(let)]
+            let_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+
+        numeric_experiments = get_experiments(type='numeric')
+        num_spread = []
+        for num in numeric_experiments:
+            to_plot_sub = subset_list_by_substring(to_plot_main, num)
+            num_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+
+        h = plt.barh(y=[model_count-0.25, model_count, model_count+0.25], width=[max(let_spread)-min(let_spread),
+            max(num_spread)-min(num_spread), max(EDC_spread)-min(EDC_spread)], height=0.2,
+            edgecolor='k', linewidth=0.75, color=[cmap(0), cmap(1), cmap(2)])
+        plt.axhline(y=model_count+0.5, color='lightgray', linewidth=0.5, label='_nolegend_')
+
+        model_count += 1
+
+    plt.ylim([-0.5,model_count-0.5])
+    plt.ylabel('Model')
+    plt.xlabel('Range of percent dimensionality reduction from prior')
+    plt.yticks(np.arange(model_count), subset_main)
+    plt.legend(h, ['Assimilated data', 'Observational error', 'EDCs'], loc='best', facecolor='white', edgecolor='black', framealpha=1, prop={'size': 9})
+    plt.tight_layout()
+    plt.savefig('../../plots/dists/' + var + '/summary_' + title + '.pdf')
+    plt.close()

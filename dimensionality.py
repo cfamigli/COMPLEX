@@ -42,6 +42,8 @@ def main():
     computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=letter_experiments, title='let_exp',  var=var)
     computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=letter_experiments, title='let_exp',  var=var, zero_point='prior')
     computil.plot_dimensionality_medians(data, subset_main=models, subset_sub=letter_experiments, title='let_exp',  var=var, zero_point='prior', fractional=True)
+
+    computil.plot_dimensionality_reduction_bar(data, subset_main=models, title='bar')
     return
 
 if __name__=='__main__':
