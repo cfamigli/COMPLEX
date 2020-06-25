@@ -13,10 +13,11 @@ def main():
 
     version = sys.argv[1]
     var = sys.argv[2]
-    date = '052320'
+    date = '062520'
 
     dataset_str = version + '_' + var + '_' + date + '.pkl'
     data = read_pickle(dataset_str)
+    data = data.drop(data[data['dimensionality']==0].index) # remove rows with dimensionality zero
 
     #data = v1_3.loc[~np.isnan(v1_3['dimensionality'])]
     print('running for full dataset')
@@ -30,7 +31,7 @@ def main():
     print('running for other obs only')
     computil.run_plots(data_no_nee_subset, subset_str='obs_no_nee_only', var=var)
 
-    model_list = ['C1','C2','C3','C4','C5','C6','C7','C8','E1','G1','G2','G3','G4','S1','S2','S4']
+    model_list = computil.raw_complexity().sort_values('npars')['models']
 
     # <><><><><><><><><><><><><><><><><><><><>
     # <><><><> COMPLEXITY vs ACCURACY <><><><>

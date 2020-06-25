@@ -46,24 +46,24 @@ def raw_complexity():
     return DataFrame(data,columns=['models','npars'])
 
 def processes_discrete(model=None):
-    data = [['C1',23.,0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
-            ['C2',33.,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C3',35.,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C4',34.,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C5',34.,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
-            ['C6',23.,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['C7',27.,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
-            ['C8',36.,1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
-            ['E1',17.,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
-            ['G1',37.,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G2',40.,1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['G3',43.,0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G4',43.,1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['S1',11.,0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
-            ['S2',14.,0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
-            ['S4',17.,0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
+    data = [['C1',23.,np.nan,0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
+            ['C2',33.,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C3',35.,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C4',34.,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C5',34.,np.nan,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
+            ['C6',23.,np.nan,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['C7',27.,np.nan,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
+            ['C8',36.,np.nan,1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
+            ['E1',17.,np.nan,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
+            ['G1',37.,np.nan,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G2',40.,np.nan,1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['G3',43.,np.nan,0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G4',43.,np.nan,1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['S1',11.,np.nan,0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
+            ['S2',14.,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
+            ['S4',17.,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
 
-    return_df = DataFrame(data,columns=['model','n_parameters','PAW','Rh','labile_c_lifespan','phenology','CUE',
+    return_df = DataFrame(data,columns=['model','n_parameters','prior_dim','PAW','Rh','labile_c_lifespan','phenology','CUE',
             'photosynthesis_module','stomatal_conductance','n_DOM_pool','n_live_C_pool',
             'n_water_pool','total_pool','water_stress_on_GPP'])
 
@@ -209,14 +209,17 @@ def plot_time_series_with_spread(obs_data, pred_data, obs_unc, cal_period_stop, 
     plt.close()
     return
 
-def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE'):
-    x = df['dimensionality'].values
+def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
+    xstr = 'dimensionality' if len(xvar)==0 else 'prior_minus_post'
+    x = df[xstr].values
+
     if (ystr=='diff'):
         y = df[metric + '_forecast'].values - df[metric + '_calibration'].values
-        avgs_y = df.groupby('dimensionality').median()[metric + '_forecast'].values - df.groupby('dimensionality').median()[metric + '_calibration'].values
+        avgs_y = df.groupby(xstr).median()[metric + '_forecast'].values - df.groupby(xstr).median()[metric + '_calibration'].values
     else:
         y = df[metric + '_' + ystr].values
-        avgs_y = df.groupby('dimensionality').median()[metric + '_' + ystr].values
+        avgs_y = df.groupby(xstr).median()[metric + '_' + ystr].values
+        avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 3] = float('nan')
     plt.figure(figsize=(5,5))
     plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.4)
     avgs_x = np.unique(x)
@@ -232,9 +235,9 @@ def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim
         plt.ylabel('RMSE (%s)' % ystr)
     else:
         plt.ylabel(metric + '_' + ystr)
-    plt.xlabel('dimensionality')
+    plt.xlabel('dimensionality') if len(xvar)==0 else plt.xlabel('prior minus posterior dimensionality')
     plt.tight_layout()
-    plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '.pdf')
+    plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
     plt.close()
     return
 
@@ -427,14 +430,16 @@ def run_plots(df, subset_str='', var='NEE'):
     plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var)
     plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='diff', subset=subset_str, ylim=[-0.3,0.3], var=var)
 
-    plot_scatter_x_dimensionality_y(df, metric='R2', ystr='forecast', subset=subset_str, ylim=[-1,1], var=var)
+    plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var, xvar='prior')
+
+    '''plot_scatter_x_dimensionality_y(df, metric='R2', ystr='forecast', subset=subset_str, ylim=[-1,1], var=var)
     plot_scatter_x_dimensionality_y(df, metric='R2', ystr='diff', subset=subset_str, ylim=[-0.3,1], var=var)
 
     plot_scatter_x_dimensionality_y(df, metric='RMSE', ystr='forecast', subset=subset_str, ylim=[0,5], var=var)
     plot_scatter_x_dimensionality_y(df, metric='RMSE', ystr='diff', subset=subset_str, ylim=[-0.5,1], var=var)
 
 
-    '''if (subset_str=='') | (subset_str=='good_only'):
+    if (subset_str=='') | (subset_str=='good_only'):
         plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.6])
         plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='diff', subset=subset_str, ylim=[-0.3,0.3])'''
     return
@@ -446,7 +451,7 @@ def plot_density(df, subset_main='', subset_sub='', title='', subset_sub_list=[]
         hist=False, kde=True, color='k', kde_kws={'bw':1, 'linewidth':2}, label='all data')
     #plt.axvline(df.loc[to_plot_main]['dimensionality'].mean(), color='k', linestyle='--', linewidth=0.5)
     if len(subset_sub_list)==0:
-        if title=='let_exp':
+        if 'let_exp' in title:
             for sub in subset_sub:
                 to_plot_sub = [str for str in to_plot_main if str.endswith(sub)]
                 sns.distplot(df.loc[to_plot_sub]['dimensionality'],
@@ -487,31 +492,34 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
 
         if zero_point=='default':
             normalize_val_diff = 0
+            normalize_val_coef = -1
             normalize_val_div = 1
         elif zero_point=='npars':
             normalize_val_diff = pars[pars['models']==i]['npars']
+            normalize_val_coef = 1
             normalize_val_div = normalize_val_diff/100 if fractional else 1
         elif zero_point=='prior':
             normalize_val_diff = df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean()
+            normalize_val_coef = 1
             normalize_val_div = normalize_val_diff/100 if fractional else 1
 
         sns.set_palette(sns.color_palette("Set2", len(subset_sub)))
         #plt.scatter(df.loc[to_plot_main]['dimensionality'].mean(), model_count, color='white', edgecolor='k', s=80, alpha=0.85, label='Mean of all runs' if model_count==len(subset_main)-1 else "")
 
         if zero_point!='prior':
-            plt.scatter((pars[pars['models']==i]['npars'] - normalize_val_diff)/normalize_val_div, model_count, marker='*', color='white', edgecolor='k', s=120, label='Number of parameters' if model_count==len(subset_main)-1 else "")
+            plt.scatter((normalize_val_diff - normalize_val_coef*pars[pars['models']==i]['npars'])/normalize_val_div, model_count, marker='*', color='white', edgecolor='k', s=120, label='Number of parameters' if model_count==len(subset_main)-1 else "")
 
-        plt.scatter((df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div, model_count, marker='D', color='white', edgecolor='k', s=50, label='Prior' if model_count==len(subset_main)-1 else "")
+        plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean())/normalize_val_div, model_count, marker='D', color='white', edgecolor='k', s=50, label='Prior' if model_count==len(subset_main)-1 else "")
 
         if len(subset_sub_list)==0:
-            if title=='let_exp':
+            if 'let_exp' in title:
                 for sub in subset_sub:
                     to_plot_sub = [str for str in to_plot_main if str.endswith(sub)]
-                    plt.scatter((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div, model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
             else:
                 for sub in subset_sub:
                     to_plot_sub = subset_list_by_substring(to_plot_main, sub)
-                    plt.scatter((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div, model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=80, alpha=0.85, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
 
         plt.axhline(y=model_count+0.5, color='gainsboro', linewidth=0.5)
 
@@ -524,9 +532,9 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
         plt.xlabel('Dimensionality')
     else:
         if fractional:
-            plt.xlabel('Percent dimensionality reduction from prior')
+            plt.xlabel('Dimensions reduced, normalized to prior (%)')
         else:
-            plt.xlabel('Dimensionality reduction')
+            plt.xlabel('Dimensions reduced\n(Prior minus posterior)')
     plt.yticks(np.arange(model_count), subset_main)
     loc = 'lower right' if zero_point=='default' else 'best'
     plt.legend(loc=loc, facecolor='white', edgecolor='black', framealpha=1, prop={'size': 9})
@@ -535,7 +543,7 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
     plt.close()
     return
 
-def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE'):
+def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE', type=''):
     plt.figure(figsize=(7,9))
     model_count = 0
 
@@ -544,8 +552,8 @@ def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE'):
     for i in subset_main:
         to_plot_main = subset_df_by_substring(df, i)
 
-        normalize_val_diff = df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean()
-        normalize_val_div = normalize_val_diff/100
+        normalize_val_diff = df.loc[[str for str in to_plot_main if 'noEDC_exp1f' in str]]['dimensionality'].mean() if type!='dimensionality' else 0
+        normalize_val_div = normalize_val_diff/100 if (type!='constrainability') & (type!='dimensionality') else 1
 
         EDC = ['_EDC', '_noEDC']
         EDC_spread = []
@@ -565,18 +573,29 @@ def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE'):
             to_plot_sub = subset_list_by_substring(to_plot_main, num)
             num_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
 
-        h = plt.barh(y=[model_count-0.25, model_count, model_count+0.25], width=[max(let_spread)-min(let_spread),
-            max(num_spread)-min(num_spread), max(EDC_spread)-min(EDC_spread)], height=0.2,
-            edgecolor='k', linewidth=0.75, color=[cmap(0), cmap(1), cmap(2)])
+        sites = ['AU-How', 'FI-Hyy', 'FR-LBr', 'FR-Pue', 'GF-Guy', 'US-Ha1']
+        site_spread = []
+        for site in sites:
+            to_plot_sub = subset_list_by_substring(to_plot_main, site)
+            site_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+
+        h = plt.barh(y=[model_count-0.3, model_count-0.1, model_count+0.1, model_count+0.3], width=[max(let_spread)-min(let_spread),
+            max(num_spread)-min(num_spread), max(site_spread)-min(site_spread), max(EDC_spread)-min(EDC_spread)], height=0.15,
+            edgecolor='k', linewidth=0.75, color=[cmap(0), cmap(1), cmap(2), cmap(3)])
         plt.axhline(y=model_count+0.5, color='lightgray', linewidth=0.5, label='_nolegend_')
 
         model_count += 1
 
     plt.ylim([-0.5,model_count-0.5])
     plt.ylabel('Model')
-    plt.xlabel('Range of percent dimensionality reduction from prior')
+    if type=='constrainability':
+        plt.xlabel('Range of constrainability \n(number of dimensions)')
+    elif type=='dimensionality':
+        plt.xlabel('Range of posterior dimensionality')
+    else:
+        plt.xlabel('Range of normalized dimensionality reduction (%)')
     plt.yticks(np.arange(model_count), subset_main)
-    plt.legend(h, ['Assimilated data', 'Observational error', 'EDCs'], loc='best', facecolor='white', edgecolor='black', framealpha=1, prop={'size': 9})
+    plt.legend(h, ['Assimilated data', 'Observational error', 'Sites', 'EDCs'], loc='best', facecolor='white', edgecolor='black', framealpha=1, prop={'size': 9})
     plt.tight_layout()
-    plt.savefig('../../plots/dists/' + var + '/summary_' + title + '.pdf')
+    plt.savefig('../../plots/dists/' + var + '/summary_' + title + '_' + type + '.pdf')
     plt.close()

@@ -29,8 +29,8 @@ def main():
         medians = computil.plot_scatter_x_process_y_skill(data, process=process, ystr='forecast', metric='hist_int', var=var)
         max_diff.append(max(medians) - min(medians))
 
-        medians = computil.plot_scatter_x_process_y_skill(data.loc[computil.subset_df_by_substring(data, '_EDC')],
-            process=process, ystr='forecast', metric='hist_int', subset='EDCs', var=var)
+        '''medians = computil.plot_scatter_x_process_y_skill(data.loc[computil.subset_df_by_substring(data, '_EDC')],
+            process=process, ystr='forecast', metric='hist_int', subset='EDCs', var=var)'''
 
     computil.plot_scatter_x_maxdiff_y_process(max_diff, data.columns[9:], ystr='forecast', metric='hist_int', subset='', var='NEE')
 
