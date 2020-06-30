@@ -36,6 +36,37 @@ def plot_heatmap_x_performance_y(df, xstr='calibration', ystr='forecast',
     plt.close()
     return
 
+def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
+    xstr = 'dimensionality' if len(xvar)==0 else xvar
+    x = df[xstr].values
+
+    if (ystr=='diff'):
+        y = df[metric + '_forecast'].values - df[metric + '_calibration'].values
+        avgs_y = df.groupby(xstr).median()[metric + '_forecast'].values - df.groupby(xstr).median()[metric + '_calibration'].values
+    else:
+        y = df[metric + '_' + ystr].values
+        avgs_y = df.groupby(xstr).median()[metric + '_' + ystr].values
+        avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 3] = float('nan')
+
+    plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.4, zorder=0)
+    avgs_x = np.unique(x)
+    plt.scatter(avgs_x, avgs_y, facecolor='cornflowerblue', edgecolor='black', linewidth=1.5, marker='o', s=60)
+    '''if (len(subset)==2) | (len(subset)==5): # model only
+        plt.axvline(np.nanmean(x), c='silver', linewidth=0.5, zorder=0)
+        plt.axhline(np.nanmean(y), c='silver', linewidth=0.5, zorder=0.5)'''
+    #plt.ylim([ylim[0], np.nanmax(y)])
+    plt.ylim(ylim)
+    if metric=='hist_int':
+        plt.ylabel('histogram overlap (%s)' % ystr)
+    elif metric=='RMSE':
+        plt.ylabel('RMSE (%s)' % ystr)
+    else:
+        plt.ylabel(metric + '_' + ystr)
+    plt.xlabel('dimensionality') if len(xvar)==0 else plt.xlabel('prior minus posterior dimensionality')
+    plt.tight_layout()
+
+    return
+
 def run_plots(df, subset_str=''):
     #plot_scatter_x_performance_y(df, xstr='calibration', ystr='forecast', subset=subset_str)
     #plot_scatter_x_performance_y(df, xstr='forecast', ystr='diff', subset=subset_str)
@@ -44,18 +75,31 @@ def run_plots(df, subset_str=''):
     return
 
 def main():
-    data = read_pickle('../data/analysis_outputs/v1.4_NEE_052220.pkl')
+    data = read_pickle('../data/analysis_outputs/v1.4_NEE_062520.pkl')
+    data = data.drop(data[data['dimensionality']==0].index)
 
     var = 'NEE'
 
     xstr = 'calibration'
     ystr = 'forecast'
 
-    os.chdir('scratch')
-
     model_list = ['C1','C2','C3','C4','C6','C8','E1','G1','G2','G3','G4','S1','S2','S4']
 
-    computil.plot_scatter_x_process_y_skill(data, process='n_parameters', ystr='forecast', metric='hist_int', var='NEE')
+    plt.figure(figsize=(5,5))
+    for model in model_list:
+        to_plot = computil.subset_df_by_substring(data, model)
+        plot_scatter_x_dimensionality_y(data.loc[to_plot], metric='hist_int', ystr='forecast', subset=model, ylim=[0,0.8], var=var, xvar='prior_minus_post')
+        plt.draw()
+        plt.pause(0.1)
+    plt.show()
+
+
+
+    '''os.chdir('scratch')
+
+
+
+    computil.plot_scatter_x_process_y_skill(data, process='n_parameters', ystr='forecast', metric='hist_int', var='NEE')'''
 
     '''data_nee_subset = data.loc[data['nee']==1]
     print('running for nee only')

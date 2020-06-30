@@ -46,24 +46,25 @@ def raw_complexity():
     return DataFrame(data,columns=['models','npars'])
 
 def processes_discrete(model=None):
-    data = [['C1',23.,np.nan,0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
-            ['C2',33.,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C3',35.,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C4',34.,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C5',34.,np.nan,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
-            ['C6',23.,np.nan,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['C7',27.,np.nan,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
-            ['C8',36.,np.nan,1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
-            ['E1',17.,np.nan,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
-            ['G1',37.,np.nan,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G2',40.,np.nan,1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['G3',43.,np.nan,0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G4',43.,np.nan,1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['S1',11.,np.nan,0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
-            ['S2',14.,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
-            ['S4',17.,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
+    data = [['C1',23.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
+            ['C2',33.,np.nan,np.nan,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C3',35.,np.nan,np.nan,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C4',34.,np.nan,np.nan,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C5',34.,np.nan,np.nan,np.nan,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
+            ['C6',23.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['C7',27.,np.nan,np.nan,np.nan,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
+            ['C8',36.,np.nan,np.nan,np.nan,1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
+            ['E1',17.,np.nan,np.nan,np.nan,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
+            ['G1',37.,np.nan,np.nan,np.nan,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G2',40.,np.nan,np.nan,np.nan,1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['G3',43.,np.nan,np.nan,np.nan,0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G4',43.,np.nan,np.nan,np.nan,1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['S1',11.,np.nan,np.nan,np.nan,0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
+            ['S2',14.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
+            ['S4',17.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
 
-    return_df = DataFrame(data,columns=['model','n_parameters','prior_dim','PAW','Rh','labile_c_lifespan','phenology','CUE',
+    return_df = DataFrame(data,columns=['model','n_parameters','prior_dim','prior_minus_post','prior_minus_post_normalized',
+            'PAW','Rh','labile_c_lifespan','phenology','CUE',
             'photosynthesis_module','stomatal_conductance','n_DOM_pool','n_live_C_pool',
             'n_water_pool','total_pool','water_stress_on_GPP'])
 
@@ -210,7 +211,7 @@ def plot_time_series_with_spread(obs_data, pred_data, obs_unc, cal_period_stop, 
     return
 
 def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
-    xstr = 'dimensionality' if len(xvar)==0 else 'prior_minus_post'
+    xstr = 'dimensionality' if len(xvar)==0 else xvar
     x = df[xstr].values
 
     if (ystr=='diff'):
@@ -238,6 +239,42 @@ def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim
     plt.xlabel('dimensionality') if len(xvar)==0 else plt.xlabel('prior minus posterior dimensionality')
     plt.tight_layout()
     plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
+    plt.close()
+    return
+
+def plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='dimensionality', col_by='prior_minus_post', ylim=[0,1], subset='', var='NEE'):
+    x = df[xstr].values
+
+    if (ystr=='diff'):
+        y = df[metric + '_forecast'].values - df[metric + '_calibration'].values
+    else:
+        y = df[metric + '_' + ystr].values
+
+    p = np.random.permutation(len(x))
+    col = df[col_by].values
+    col_min = min(col)
+    col_max = max(col)
+
+    plt.figure(figsize=(6,5))
+    sc_cbar = plt.scatter([x[p[0]]], [y[p[0]]], c=[col[p[0]]], cmap=plt.cm.gnuplot_r, marker='.', edgecolor='white',
+        alpha=1, s=80, linewidth=0.25, vmin=col_min, vmax=col_max, zorder=0)
+    plt.scatter(x[p], y[p], c=col[p], cmap=plt.cm.gnuplot_r, marker='.', edgecolor='white', alpha=0.7,
+        s=80, linewidth=0.25,vmin=col_min, vmax=col_max, zorder=0)
+
+    plt.ylim(ylim)
+    if metric=='hist_int':
+        plt.ylabel('histogram overlap (%s)' % ystr)
+    elif metric=='RMSE':
+        plt.ylabel('RMSE (%s)' % ystr)
+    else:
+        plt.ylabel(metric + '_' + ystr)
+
+    cbar = plt.colorbar(sc_cbar, drawedges=False)
+    cbar.set_label(col_by)
+
+    plt.xlabel(xstr)
+    plt.tight_layout()
+    plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xstr + '_col_by' + '_' + col_by + '.pdf')
     plt.close()
     return
 
@@ -430,18 +467,15 @@ def run_plots(df, subset_str='', var='NEE'):
     plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var)
     plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='diff', subset=subset_str, ylim=[-0.3,0.3], var=var)
 
-    plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var, xvar='prior')
+    plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var, xvar='prior_minus_post')
+    plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var, xvar='prior_minus_post_normalized')
 
-    '''plot_scatter_x_dimensionality_y(df, metric='R2', ystr='forecast', subset=subset_str, ylim=[-1,1], var=var)
-    plot_scatter_x_dimensionality_y(df, metric='R2', ystr='diff', subset=subset_str, ylim=[-0.3,1], var=var)
+    plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='dimensionality', col_by='prior_minus_post', ylim=[0,0.8], subset=subset_str, var=var)
+    plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='dimensionality', col_by='prior_minus_post_normalized', ylim=[0,0.8], subset=subset_str, var=var)
+    plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='prior_minus_post', col_by='dimensionality', ylim=[0,0.8], subset=subset_str, var=var)
+    plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='dimensionality', col_by='prior_dim', ylim=[0,0.8], subset=subset_str, var=var)
+    plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='prior_minus_post', col_by='prior_dim', ylim=[0,0.8], subset=subset_str, var=var)
 
-    plot_scatter_x_dimensionality_y(df, metric='RMSE', ystr='forecast', subset=subset_str, ylim=[0,5], var=var)
-    plot_scatter_x_dimensionality_y(df, metric='RMSE', ystr='diff', subset=subset_str, ylim=[-0.5,1], var=var)
-
-
-    if (subset_str=='') | (subset_str=='good_only'):
-        plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.6])
-        plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='diff', subset=subset_str, ylim=[-0.3,0.3])'''
     return
 
 def plot_density(df, subset_main='', subset_sub='', title='', subset_sub_list=[], var='NEE'):
