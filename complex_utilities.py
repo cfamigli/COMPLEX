@@ -578,11 +578,12 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
     return
 
 def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE', type=''):
-    plt.figure(figsize=(7,9))
+    plt.figure(figsize=(7,9)) if len(subset_main)>1 else plt.figure(figsize=(3,3))
     model_count = 0
 
     cmap = matplotlib.cm.get_cmap('Set2')
 
+    legend_labels = []
     for i in subset_main:
         to_plot_main = subset_df_by_substring(df, i)
 
@@ -594,34 +595,51 @@ def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE', t
         for con in EDC:
             to_plot_sub = subset_list_by_substring(to_plot_main, con)
             EDC_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+        legend_labels.append('EDCs')
 
         letter_experiments = ['a', 'b', 'c', 'd', 'e', 'f']
         let_spread = []
         for let in letter_experiments:
             to_plot_sub = [str for str in to_plot_main if str.endswith(let)]
             let_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+        legend_labels.append('Assimilated data')
 
         numeric_experiments = get_experiments(type='numeric')
         num_spread = []
         for num in numeric_experiments:
             to_plot_sub = subset_list_by_substring(to_plot_main, num)
             num_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+        legend_labels.append('Observational error')
 
         sites = ['AU-How', 'FI-Hyy', 'FR-LBr', 'FR-Pue', 'GF-Guy', 'US-Ha1']
         site_spread = []
         for site in sites:
             to_plot_sub = subset_list_by_substring(to_plot_main, site)
             site_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+        legend_labels.append('Sites')
 
-        h = plt.barh(y=[model_count-0.3, model_count-0.1, model_count+0.1, model_count+0.3], width=[max(let_spread)-min(let_spread),
-            max(num_spread)-min(num_spread), max(site_spread)-min(site_spread), max(EDC_spread)-min(EDC_spread)], height=0.15,
-            edgecolor='k', linewidth=0.75, color=[cmap(0), cmap(1), cmap(2), cmap(3)])
+        if len(subset_main)==1:
+            models = raw_complexity().sort_values('npars')['models']
+            model_spread = []
+            for model in models:
+                to_plot_sub = subset_list_by_substring(to_plot_main, model)
+                model_spread.append((df.loc[to_plot_sub]['dimensionality'].mean() - normalize_val_diff)/normalize_val_div)
+            legend_labels.append('Models')
+
+            h = plt.barh(y=[model_count-0.333, model_count-0.167, model_count, model_count+0.167, model_count+0.333], width=[max(EDC_spread)-min(EDC_spread),
+                max(let_spread)-min(let_spread), max(num_spread)-min(num_spread), max(site_spread)-min(site_spread),
+                max(model_spread)-min(model_spread)], height=0.15, edgecolor='k', linewidth=0.75, color=[cmap(0), cmap(1), cmap(2), cmap(3), cmap(4)])
+
+        else:
+            h = plt.barh(y=[model_count-0.3, model_count-0.1, model_count+0.1, model_count+0.3], width=[max(EDC_spread)-min(EDC_spread),
+                max(let_spread)-min(let_spread), max(num_spread)-min(num_spread), max(site_spread)-min(site_spread)], height=0.15,
+                edgecolor='k', linewidth=0.75, color=[cmap(0), cmap(1), cmap(2), cmap(3)])
         plt.axhline(y=model_count+0.5, color='lightgray', linewidth=0.5, label='_nolegend_')
 
         model_count += 1
 
     plt.ylim([-0.5,model_count-0.5])
-    plt.ylabel('Model')
+    plt.ylabel('Model') if len(subset_main)>1 else plt.ylabel('')
     if type=='constrainability':
         plt.xlabel('Range of constrainability \n(number of dimensions)')
     elif type=='dimensionality':
@@ -629,7 +647,7 @@ def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE', t
     else:
         plt.xlabel('Range of normalized dimensionality reduction (%)')
     plt.yticks(np.arange(model_count), subset_main)
-    plt.legend(h, ['Assimilated data', 'Observational error', 'Sites', 'EDCs'], loc='best', facecolor='white', edgecolor='black', framealpha=1, prop={'size': 9})
+    plt.legend(h, legend_labels, loc='best', facecolor='white', edgecolor='black', framealpha=1, prop={'size': 9})
     plt.tight_layout()
     plt.savefig('../../plots/dists/' + var + '/summary_' + title + '_' + type + '.pdf')
     plt.close()

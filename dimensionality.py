@@ -11,7 +11,7 @@ def main():
 
     version = sys.argv[1]
     var = sys.argv[2]
-    date = '052320'
+    date = '062520'
 
     dataset_str = version + '_' + var + '_' + date + '.pkl'
     data = read_pickle(dataset_str)
@@ -55,6 +55,7 @@ def main():
     computil.plot_dimensionality_reduction_bar(data, subset_main=models, title='bar', type='constrainability')
     computil.plot_dimensionality_reduction_bar(data, subset_main=models, title='bar', type='dimensionality')
     computil.plot_dimensionality_reduction_bar(data, subset_main=models, title='bar', type='')
+    computil.plot_dimensionality_reduction_bar(data, subset_main=[''], title='bar_full', type='dimensionality')
     return
 
 if __name__=='__main__':
