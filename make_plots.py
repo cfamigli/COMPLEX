@@ -31,6 +31,10 @@ def main():
     print('running for other obs only')
     computil.run_plots(data_no_nee_subset, subset_str='obs_no_nee_only', var=var)
 
+    data_obs_subset = data.loc[~(data.index.str.endswith('f'))]
+    print('running for all obs only')
+    computil.run_plots(data_obs_subset, subset_str='obs_only', var=var)
+
     model_list = computil.raw_complexity().sort_values('npars')['models']
 
     # <><><><><><><><><><><><><><><><><><><><>
@@ -55,13 +59,22 @@ def main():
         to_plot = computil.subset_df_by_substring(data, experiment)
         computil.run_plots(data.loc[to_plot], subset_str=experiment, var=var)
 
+        to_plot = computil.subset_df_by_substring(data_obs_subset, experiment)
+        computil.run_plots(data_obs_subset.loc[to_plot], subset_str=experiment + '_obs', var=var)
+
     for experiment_letter in ['a','b','c','d','e','f']:
         to_plot = data[data.index.str.endswith(experiment_letter)]
         computil.run_plots(to_plot, subset_str='exp' + experiment_letter, var=var)
 
+        to_plot = data_obs_subset[data_obs_subset.index.str.endswith(experiment_letter)]
+        computil.run_plots(to_plot, subset_str='exp' + experiment_letter + '_obs', var=var)
+
     for site in computil.site_years()['sites']:
         to_plot = computil.subset_df_by_substring(data, site)
         computil.run_plots(data.loc[to_plot], subset_str=site, var=var)
+
+        to_plot = computil.subset_df_by_substring(data_obs_subset, site)
+        computil.run_plots(data_obs_subset.loc[to_plot], subset_str=site + '_obs', var=var)
 
     for site in computil.site_years()['sites']:
         sites = computil.subset_df_by_substring(data, site)
@@ -87,6 +100,9 @@ def main():
 
         to_plot = computil.subset_df_by_substring(data_nee_subset, EDC)
         computil.run_plots(data_nee_subset.loc[to_plot], subset_str='nee' + EDC, var=var)
+
+        to_plot = computil.subset_df_by_substring(data_obs_subset, EDC)
+        computil.run_plots(data_obs_subset.loc[to_plot], subset_str='obs' + EDC, var=var)
 
     for EDC in ['_EDC', '_noEDC']:
         to_plot = computil.subset_df_by_substring(data, EDC)
