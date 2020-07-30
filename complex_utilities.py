@@ -7,7 +7,6 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy import stats
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score, mean_squared_error
@@ -203,13 +202,17 @@ def plot_time_series_with_spread(obs_data, pred_data, obs_unc, cal_period_stop, 
         label='ensemble median (predicted)', zorder=2)
     plt.plot(o, c='crimson', linewidth=2, label='observed', zorder=4)
     plt.fill_between(np.arange(p.shape[1]), o+obs_unc, o-obs_unc,
-        facecolor='lightcoral', alpha=0.8, label='observational uncertainty', zorder=1.5)
+        facecolor='lightturquoise', alpha=0.8, label='observational uncertainty', zorder=1.5)
     plt.ylabel(var)
     plt.xlabel('months after start')
     plt.legend(loc='best')
     plt.savefig('../../../../plots/time_series_with_spread/' + title + '.pdf')
     plt.close()
     return
+
+def compute_aic(n_pars, ydata, ypred):
+    AIC = 2*n_pars - 2*np.log(np.nansum((ydata - ypred)**2))
+    return AIC
 
 def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
     xstr = 'dimensionality' if len(xvar)==0 else xvar
@@ -221,9 +224,9 @@ def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim
     else:
         y = df[metric + '_' + ystr].values
         avgs_y = df.groupby(xstr).median()[metric + '_' + ystr].values
-        avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 3] = float('nan')
+        avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 5] = float('nan')
     plt.figure(figsize=(5,5))
-    plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.4, zorder=0)
+    plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.2, zorder=0)
     avgs_x = np.unique(x)
     plt.scatter(avgs_x, avgs_y, facecolor='cornflowerblue', edgecolor='black', linewidth=1.5, marker='o', s=60, zorder=5)
     if (len(subset)==2) | (len(subset)==5): # model only
@@ -238,19 +241,23 @@ def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim
     else:
         plt.ylabel(metric + '_' + ystr)
 
-    '''try:
+    pred_y = float('nan')
+    try:
         inds = (~np.isnan(avgs_x)) & (~np.isnan(avgs_y))
-        slope, intercept, r_value, p_value, std_err = stats.linregress(avgs_x[inds], avgs_y[inds])
-        plt.plot(avgs_x[inds], slope*avgs_x[inds] + intercept, linewidth=1, c='k', zorder=1)
-    except:
-        pass'''
+        degree = 4
+        coef = np.polyfit(avgs_x[inds], avgs_y[inds], degree)
+        poly1d_fn = np.poly1d(coef)
+        pred_y = poly1d_fn(avgs_x[inds])
+        plt.plot(avgs_x[inds], pred_y, linewidth=1.5, c='k', zorder=1)
+        aic = compute_aic(degree, avgs_y[inds], pred_y)
+    except Exception as e:
+        print(e)
 
     plt.xlabel('dimensionality') if len(xvar)==0 else plt.xlabel('prior minus posterior dimensionality')
     plt.tight_layout()
-    print(subset)
-    plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
+    plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_wfit.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
     plt.close()
-    return
+    return avgs_x[inds], pred_y
 
 def plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='dimensionality', col_by='prior_minus_post', ylim=[0,1], subset='', var='NEE'):
     x = df[xstr].values
@@ -343,8 +350,7 @@ def plot_scatter_model_avg_x_dimensionality_y(lx, ly, ey, ystr='hist_int_forecas
     plt.close()
     return
 
-def plot_scatter_x_performance_y(df, xstr='calibration', ystr='forecast',
-    metric='hist_int', subset='', var='NEE'):
+def plot_scatter_x_performance_y(df, xstr='calibration', ystr='forecast', metric='hist_int', subset='', var='NEE'):
     x = df[metric + '_' + xstr].values
     plt.figure(figsize=(5,5))
     if (ystr=='diff'):
@@ -360,8 +366,7 @@ def plot_scatter_x_performance_y(df, xstr='calibration', ystr='forecast',
     plt.close()
     return
 
-def plot_scatter_x_performance_y_dimensionality(df, list_of_subsets, xstr='calibration', ystr='forecast',
-    metric='hist_int', subset='', var='NEE'):
+def plot_scatter_x_performance_y_dimensionality(df, list_of_subsets, xstr='calibration', ystr='forecast', metric='hist_int', subset='', var='NEE'):
     fig, ax = plt.subplots(1, len(list_of_subsets), figsize=(6*len(list_of_subsets),5))
 
     col_max = df['dimensionality'].max()
@@ -474,7 +479,7 @@ def plot_scatter_x_maxdiff_y_process(max_diff, processes, ystr='forecast', metri
     return
 
 def run_plots(df, subset_str='', var='NEE'):
-    plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var)
+    plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,0.8], subset=subset_str, var=var)
     #plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='diff', subset=subset_str, ylim=[-0.3,0.3], var=var)
 
     '''plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var, xvar='prior_minus_post')
@@ -670,3 +675,111 @@ def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE', t
     plt.tight_layout()
     plt.savefig('../../plots/dists/' + var + '/summary_' + title + '_' + type + '.pdf')
     plt.close()
+
+def compute_statistics_of_fit(avgs_x, pred_y):
+    if np.isscalar(pred_y):
+        peak_location = float('nan')
+        range_y = float('nan')
+        max_skill = float('nan')
+        slope = float('nan')
+    else:
+        peak_location = avgs_x[np.argmax(pred_y)]
+        range_y = pred_y[-1] - pred_y[0]
+        max_skill = np.nanmax(pred_y)
+        slope = range_y/(avgs_x[-1]-avgs_x[0])
+    return peak_location, range_y, max_skill, slope
+
+def plot_statistics_of_fit_twoaxes(peak_locations, range_ys, labels, obs_binary):
+    fig, ax = plt.subplots(2,2,figsize=(7,6.5))
+
+    colors = ['white','white','dodgerblue','dodgerblue','crimson','crimson','yellowgreen','yellowgreen','darkorange','darkorange',
+        'dodgerblue','dodgerblue','crimson','crimson','yellowgreen','yellowgreen','darkorange','darkorange','mediumorchid','mediumorchid','gold','gold',
+        'dodgerblue','dodgerblue','crimson','crimson','yellowgreen','yellowgreen','darkorange','darkorange','mediumorchid','mediumorchid','gold','gold',
+        'dodgerblue','dodgerblue','crimson','crimson']
+
+    for label in labels:
+        if ' ' in label:
+            for row in [0,1]:
+                for col in [0,1]:
+                    m = 'o' if obs_binary[labels.index(label)]==0 else '^'
+                    ax[row,col].scatter(peak_locations[labels.index(label)], range_ys[labels.index(label)], s=125, c=colors[labels.index(label)], edgecolor='k', linewidth=0.5, marker=m, label=label)
+                    ax[row,col].set_xlabel('Dimensionality at which \nmaximum skill is achieved')
+                    ax[row,col].set_ylabel('Range in skill between highest\n and lowest dimensionality')
+                    ax[row,col].set_xlim([5,40])
+                    ax[row,col].set_ylim([-0.25,0.35])
+
+        if (label[0]=='e') & (any(i.isdigit() for i in label)):
+            m = 'o' if obs_binary[labels.index(label)]==0 else '^'
+            l = labels[labels.index(label)] if obs_binary[labels.index(label)]==0 else labels[labels.index(label)][0:-4] + ' with obs'
+            if obs_binary[labels.index(label)]==0:
+                continue
+            else:
+                ax[0,1].scatter(peak_locations[labels.index(label)], range_ys[labels.index(label)], s=125, c=colors[labels.index(label)], edgecolor='k', linewidth=0.5, marker=m, label=l)
+        ax[0,1].legend(loc='best', facecolor='white', edgecolor='k', framealpha=0.5, markerscale=0.5, prop={'size': 7})
+
+        if (label[0]=='e') & ~(any(i.isdigit() for i in label)):
+            m = 'o'
+            l = label if obs_binary[labels.index(label)]==0 else '_nolegend_'
+            ax[0,0].scatter(peak_locations[labels.index(label)], range_ys[labels.index(label)], s=125, c=colors[labels.index(label)], edgecolor='k', linewidth=0.5, marker=m, label=l)
+        ax[0,0].legend(loc='best', facecolor='white', edgecolor='k', framealpha=0.5, markerscale=0.5, prop={'size': 7})
+
+        if '-' in label:
+            m = 'o' if obs_binary[labels.index(label)]==0 else '^'
+            l = labels[labels.index(label)] if obs_binary[labels.index(label)]==0 else labels[labels.index(label)][0:-4] + ' with obs'
+            if obs_binary[labels.index(label)]==0:
+                continue
+            else:
+                ax[1,0].scatter(peak_locations[labels.index(label)], range_ys[labels.index(label)], s=125, c=colors[labels.index(label)], edgecolor='k', linewidth=0.5, marker=m, label=l)
+        ax[1,0].legend(loc='best', facecolor='white', edgecolor='k', framealpha=0.5, markerscale=0.5, prop={'size': 7})
+
+        if 'EDC' in label:
+            m = 'o' if obs_binary[labels.index(label)]==0 else '^'
+            l = labels[labels.index(label)] if obs_binary[labels.index(label)]==0 else labels[labels.index(label)][0:-4] + ' with obs'
+            if obs_binary[labels.index(label)]==0:
+                continue
+            else:
+                ax[1,1].scatter(peak_locations[labels.index(label)], range_ys[labels.index(label)], s=125, c=colors[labels.index(label)], edgecolor='k', linewidth=0.5, marker=m, label=l)
+        ax[1,1].legend(loc='best', facecolor='white', edgecolor='k', framealpha=0.5, markerscale=0.5, prop={'size': 7})
+
+    plt.tight_layout()
+    plt.savefig('../../plots/scatters/dimensionality/summary_statistics_obs.pdf')
+    plt.close()
+    return
+
+def plot_statistics_of_fit(peak_locations, range_ys, max_skills, slopes, labels, obs_binary):
+    locations = [0, 1, 2, 2, 3, 3, 4, 4, 5, 5, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 2, 2, 3, 3]
+    colors = ['white','white','midnightblue','midnightblue','mediumblue','mediumblue','royalblue','royalblue','cornflowerblue','cornflowerblue',
+        'midnightblue','midnightblue','mediumblue','mediumblue','royalblue','royalblue','cornflowerblue','cornflowerblue','lightskyblue','lightskyblue','lightcyan','lightcyan',
+        'midnightblue','midnightblue','mediumblue','mediumblue','royalblue','royalblue','cornflowerblue','cornflowerblue','lightskyblue','lightskyblue','lightcyan','lightcyan',
+        'midnightblue','midnightblue','mediumblue','mediumblue']
+
+    for labels_start, labels_end, subset in [[2,9, 'error'],[10,21, 'data'],[22,33, 'site'],[34,37, 'EDC']]:
+        fig, ax = plt.subplots(1,3,figsize=(7.5,2.5))
+        xtick = []
+        xtickloc = []
+        palette = sns.light_palette('royalblue',(labels_end+1-labels_start))
+
+        count = 0
+        for i in range(labels_start, labels_end+1):
+            if obs_binary[i]==1:
+                ax[0].bar(locations[i], peak_locations[i], facecolor=palette[count], edgecolor='k', width=0.5, linewidth=1)
+                ax[1].bar(locations[i], range_ys[i], facecolor=palette[count], edgecolor='k', width=0.5, linewidth=1)
+                ax[2].bar(locations[i], max_skills[i], facecolor=palette[count], edgecolor='k', width=0.5, linewidth=1)
+                #ax[3].bar(locations[i], slopes[i], facecolor=palette[count], edgecolor='k', width=0.5, linewidth=1)
+                xtick.append(labels[i][0:-4])
+                xtickloc.append(locations[i])
+            count += 1
+
+        for j, metric, ylim in [0, 'Optimum\n dimensionality',[0,40]],[1,'Range of skill',[-0.025,0.28]],[2,'Maximum skill',[0,0.43]]:#,[3,'Slope',[-0.001,0.009]]:
+            ax[j].axhline(y=0, c='k', linewidth=0.5)
+            ax[j].set_xticks(xtickloc)
+            ax[j].set_xticklabels(xtick, rotation=60)
+            ax[j].set_ylabel(metric)
+            ax[j].set_xlim([1.5,len(xtick)+1.5]) if labels_start!=10 else ax[j].set_xlim([1.5,len(xtick)+0.5])
+            ax[j].set_ylim(ylim)
+        plt.tight_layout()
+        fig.subplots_adjust(wspace=.5)
+        plt.savefig('../../plots/scatters/dimensionality/summary_statistics_' + subset + '.pdf')
+        plt.close()
+
+    return
