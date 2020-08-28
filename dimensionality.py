@@ -11,7 +11,7 @@ def main():
 
     version = sys.argv[1]
     var = sys.argv[2]
-    date = '062520'
+    date = '082820'
 
     dataset_str = version + '_' + var + '_' + date + '.pkl'
     data = read_pickle(dataset_str)

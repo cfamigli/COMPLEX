@@ -13,7 +13,7 @@ def main():
 
     version = sys.argv[1]
     var = sys.argv[2]
-    date = '062520'
+    date = '082820'
 
     dataset_str = version + '_' + var + '_' + date + '.pkl'
     data = read_pickle(dataset_str)
@@ -76,7 +76,17 @@ def main():
         to_plot = computil.subset_df_by_substring(data_obs_subset, site)
         computil.run_plots(data_obs_subset.loc[to_plot], subset_str=site + '_obs', var=var)
 
-    for site in computil.site_years()['sites']:
+    for EDC in ['_EDC', '_noEDC']:
+        to_plot = computil.subset_df_by_substring(data, EDC)
+        computil.run_plots(data.loc[to_plot], subset_str=EDC, var=var)
+
+        to_plot = computil.subset_df_by_substring(data_nee_subset, EDC)
+        computil.run_plots(data_nee_subset.loc[to_plot], subset_str='nee' + EDC, var=var)
+
+        to_plot = computil.subset_df_by_substring(data_obs_subset, EDC)
+        computil.run_plots(data_obs_subset.loc[to_plot], subset_str='obs' + EDC, var=var)
+
+    '''for site in computil.site_years()['sites']:
         sites = computil.subset_df_by_substring(data, site)
         for EDC in ['_EDC', '_noEDC']:
             to_plot = computil.subset_list_by_substring(sites, EDC)
@@ -94,15 +104,7 @@ def main():
             to_plot = computil.subset_list_by_substring(models, site)
             computil.run_plots(data.loc[to_plot], subset_str=model + '_' + site, var=var)
 
-    for EDC in ['_EDC', '_noEDC']:
-        to_plot = computil.subset_df_by_substring(data, EDC)
-        computil.run_plots(data.loc[to_plot], subset_str=EDC, var=var)
 
-        to_plot = computil.subset_df_by_substring(data_nee_subset, EDC)
-        computil.run_plots(data_nee_subset.loc[to_plot], subset_str='nee' + EDC, var=var)
-
-        to_plot = computil.subset_df_by_substring(data_obs_subset, EDC)
-        computil.run_plots(data_obs_subset.loc[to_plot], subset_str='obs' + EDC, var=var)
 
     for EDC in ['_EDC', '_noEDC']:
         to_plot = computil.subset_df_by_substring(data, EDC)
@@ -115,15 +117,15 @@ def main():
         experiments = computil.subset_df_by_substring(data, experiment)
         for model in model_list:
             to_plot = computil.subset_list_by_substring(experiments, model)
-            computil.run_plots(data.loc[to_plot], subset_str=model + '_' + experiment, var=var)
+            computil.run_plots(data.loc[to_plot], subset_str=model + '_' + experiment, var=var)'''
 
     # <><><><><><><><><><><><><><><><><><><>
     # <><><><> ACCURACY vs ACCURACY <><><><>
     # <><><><><><><><><><><><><><><><><><><>
 
-    for [xstr, ystr] in [['calibration', 'forecast'],['forecast', 'diff']]:
+    '''for [xstr, ystr] in [['calibration', 'forecast'],['forecast', 'diff']]:
         for metric in ['hist_int']:
-            '''computil.plot_scatter_x_performance_y_multicolor(data,
+            computil.plot_scatter_x_performance_y_multicolor(data,
                 model_list, xstr=xstr, ystr=ystr, subset='models', var=var)
 
             computil.plot_scatter_x_performance_y_multicolor(data,
@@ -136,7 +138,7 @@ def main():
 
             computil.plot_scatter_x_performance_y_multicolor(data,
                 ['_EDC', '_noEDC'],
-                xstr=xstr, ystr=ystr, subset='EDCs', var=var)'''
+                xstr=xstr, ystr=ystr, subset='EDCs', var=var)
 
             computil.plot_scatter_x_performance_y_dimensionality(data,
                 ['_EDC', '_noEDC'], xstr=xstr, ystr=ystr, metric=metric, subset='EDCs', var=var)
@@ -168,7 +170,7 @@ def main():
             # <><><><><><><><><><><><><><><><><><><>
 
             to_plot = computil.subset_df_by_substring(data, '_EDC')
-            '''computil.plot_scatter_x_performance_y_multicolor(data.loc[to_plot],
+            computil.plot_scatter_x_performance_y_multicolor(data.loc[to_plot],
                 model_list, xstr=xstr, ystr=ystr, subset='models_EDC', var=var)
 
             computil.plot_scatter_x_performance_y_multicolor(data.loc[to_plot],
@@ -181,7 +183,7 @@ def main():
 
             computil.plot_scatter_x_performance_y_multicolor(data.loc[to_plot],
                 ['_EDC', '_noEDC'],
-                xstr=xstr, ystr=ystr, subset='EDCs_EDC', var=var)'''
+                xstr=xstr, ystr=ystr, subset='EDCs_EDC', var=var)
 
             computil.plot_scatter_x_performance_y_dimensionality(data.loc[to_plot],
                 model_list, xstr=xstr, ystr=ystr, metric=metric, subset='models_EDC', var=var)
@@ -213,7 +215,7 @@ def main():
 
             computil.plot_scatter_x_performance_y_dimensionality(to_plot,
                 computil.site_years()['sites'],
-                xstr=xstr, ystr=ystr, metric=metric, subset='sites_nee', var=var)
+                xstr=xstr, ystr=ystr, metric=metric, subset='sites_nee', var=var)'''
 
     return
 
