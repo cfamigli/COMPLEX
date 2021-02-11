@@ -13,7 +13,7 @@ def main():
 
     version = sys.argv[1]
     var = sys.argv[2]
-    date = '082820'
+    date = '092220'
 
     dataset_str = version + '_' + var + '_' + date + '.pkl'
     data = read_pickle(dataset_str)
@@ -27,6 +27,10 @@ def main():
     print('running for nee only')
     computil.run_plots(data_nee_subset, subset_str='nee_only', var=var)
 
+    data_constrained_subset = data.loc[(data.index.str.endswith('b')) & (data.index.str.contains('_EDC_'))]
+    print('running for constrained subset only')
+    computil.run_plots(data_constrained_subset, subset_str='constrained_only', var=var)
+
     data_no_nee_subset = data.loc[(data['nee']==0) & ~(data.index.str.endswith('f'))]
     print('running for other obs only')
     computil.run_plots(data_no_nee_subset, subset_str='obs_no_nee_only', var=var)
@@ -36,6 +40,15 @@ def main():
     computil.run_plots(data_obs_subset, subset_str='obs_only', var=var)
 
     model_list = computil.raw_complexity().sort_values('npars')['models']
+
+    print('running with npars')
+    computil.plot_scatter_x_dimensionality_y(data, ylim=[1,3], var=var, metric='RMSE', subset='n_pars', xvar='dimensionality')
+    computil.plot_scatter_x_dimensionality_y(data[data['RMSE_forecast']<2.5].loc[(data[data['RMSE_forecast']<2.5].index.str.endswith('2b'))], ylim=[1,2], var=var, metric='RMSE', subset='n_pars_obs', xvar='n_parameters')
+    computil.plot_scatter_x_dimensionality_y(data.loc[(data.index.str.endswith('f')) & (data.index.str.contains('_noEDC_'))], ylim=[1,3], var=var, metric='RMSE', subset='n_pars_unc', xvar='dimensionality')
+    computil.plot_scatter_x_dimensionality_y(data, ylim=[0,0.8], var=var, metric='hist_int', subset='n_pars', xvar='n_parameters')
+    computil.plot_scatter_x_dimensionality_y(data_obs_subset, ylim=[0,0.8], var=var, metric='hist_int', subset='n_pars_obs', xvar='n_parameters')
+    computil.plot_scatter_x_dimensionality_y(data.loc[(data.index.str.endswith('f')) & (data.index.str.contains('_noEDC_'))], ylim=[0,0.8], var=var, metric='hist_int', subset='n_pars_unc', xvar='n_parameters')
+
 
     # <><><><><><><><><><><><><><><><><><><><>
     # <><><><> COMPLEXITY vs ACCURACY <><><><>
@@ -55,7 +68,7 @@ def main():
     computil.plot_scatter_model_avg_x_dimensionality_y(lx=absolute_complexity,
         ly=average_metric, ey=std_metric, var=var)
 
-    for experiment in computil.get_experiments():
+    for experiment in computil.get_experiments('numeric'):
         to_plot = computil.subset_df_by_substring(data, experiment)
         computil.run_plots(data.loc[to_plot], subset_str=experiment, var=var)
 

@@ -7,10 +7,12 @@ import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score, mean_squared_error
+from scipy.stats import gaussian_kde, pearsonr
 
 def csv_to_np(file, header=0):
     # return a numpy array of floats
@@ -42,27 +44,27 @@ def site_years():
     return DataFrame(data,columns=['sites','nyears'])
 
 def raw_complexity():
-    data = [['C1',23],['C2',33],['C3',35],['C4',34],['C5',34],['C6',23],['C7',27],['C8',36],['E1',17],
-        ['G1',37],['G2',40],['G3',43],['G4',43],['S1',11],['S2',14],['S4',17]]
+    data = [['C1',24],['C2',33],['C3',35],['C4',37],['C5',36],['C6',24],['C7',28],['C8',36],['E1',18],
+        ['G1',38],['G2',41],['G3',44],['G4',44],['S1',12],['S2',14],['S4',18]]
     return DataFrame(data,columns=['models','npars'])
 
 def processes_discrete(model=None):
-    data = [['C1',23.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
+    data = [['C1',24.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,2.,4.,0.,6.,0],
             ['C2',33.,np.nan,np.nan,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
             ['C3',35.,np.nan,np.nan,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C4',34.,np.nan,np.nan,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
-            ['C5',34.,np.nan,np.nan,np.nan,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
-            ['C6',23.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['C7',27.,np.nan,np.nan,np.nan,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
+            ['C4',37.,np.nan,np.nan,np.nan,1.,1.,2.,2.,0.,0.,0.,2.,4.,1.,7.,1],
+            ['C5',36.,np.nan,np.nan,np.nan,1.,1.,1.,2.,3.,2.,1.,np.nan,np.nan,np.nan,np.nan,np.nan],
+            ['C6',24.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['C7',28.,np.nan,np.nan,np.nan,1.,0.,1.,1.,0.,1.,2.,3.,4.,5.,np.nan,np.nan],
             ['C8',36.,np.nan,np.nan,np.nan,1.,0.,2.,1.,0.,0.,2.,8.,1.,np.nan,np.nan,np.nan],
-            ['E1',17.,np.nan,np.nan,np.nan,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
-            ['G1',37.,np.nan,np.nan,np.nan,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G2',40.,np.nan,np.nan,np.nan,1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['G3',43.,np.nan,np.nan,np.nan,0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
-            ['G4',43.,np.nan,np.nan,np.nan,1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
-            ['S1',11.,np.nan,np.nan,np.nan,0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
+            ['E1',18.,np.nan,np.nan,np.nan,0.,0.,0.,0.,0.,0.,0.,3.,3.,0.,np.nan,np.nan],
+            ['G1',38.,np.nan,np.nan,np.nan,0.,0.,2.,3.,1.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G2',41.,np.nan,np.nan,np.nan,1.,0.,2.,3.,1.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['G3',44.,np.nan,np.nan,np.nan,0.,0.,2.,4.,2.,1.,2.,3.,4.,0.,np.nan,np.nan],
+            ['G4',44.,np.nan,np.nan,np.nan,1.,0.,2.,4.,2.,1.,2.,3.,4.,3.,np.nan,np.nan],
+            ['S1',12.,np.nan,np.nan,np.nan,0.,0.,0.,0.,0.,0.,0.,1.,2.,0.,np.nan,np.nan],
             ['S2',14.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,np.nan,np.nan,np.nan,np.nan],
-            ['S4',17.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
+            ['S4',18.,np.nan,np.nan,np.nan,0.,0.,1.,1.,0.,0.,0.,3.,2.,0.,np.nan,np.nan]]
 
     return_df = DataFrame(data,columns=['model','n_parameters','prior_dim','prior_minus_post','prior_minus_post_normalized',
             'PAW','Rh','labile_c_lifespan','phenology','CUE',
@@ -143,12 +145,13 @@ def do_PCA(X, n_components):
 def calc_R2_RMSE(obs_data, pred_data):
     inds = (obs_data == -9999) | (pred_data == -9999) | np.isnan(obs_data) | np.isnan(pred_data)
     try:
-        R2 = r2_score(obs_data[~inds], pred_data[~inds])
-        RMSE = np.sqrt(mean_squared_error(obs_data[~inds], pred_data[~inds]))
+        r, _ = pearsonr(obs_data[~inds], pred_data[~inds])
+        #R2 = r2_score(obs_data[~inds], pred_data[~inds])
+        RMSE = np.sqrt(mean_squared_error(obs_data[~inds], pred_data[~inds])) / abs(np.nanstd(obs_data[~inds]))
     except:
-        R2 = float('nan')
+        r = float('nan')
         RMSE = float('nan')
-    return (R2, RMSE)
+    return (r, RMSE)
 
 def append_to_df(df, model, site_EDC, experiment, good_flag, dimensionality,
     hist_int_calibration, hist_int_forecast, R2_calibration, R2_forecast,
@@ -187,7 +190,7 @@ def plot_time_series(obs_data, pred_data, model=None):
     plt.close()
     return
 
-def plot_time_series_with_spread(obs_data, pred_data, obs_unc, cal_period_stop, var='NEE', title=None):
+def plot_time_series_with_spread(obs_data, pred_data, obs_unc, cal_period_stop, xlim=[None,None], var='NEE', title=None, saveloc='../../../../plots/time_series_with_spread/'):
     o = np.copy(obs_data)
     p = np.copy(pred_data)
     o[obs_data==-9999] = float('nan')
@@ -206,10 +209,27 @@ def plot_time_series_with_spread(obs_data, pred_data, obs_unc, cal_period_stop, 
         facecolor='lightpink', alpha=0.8, label='observational uncertainty', zorder=1.5)
     plt.ylabel(var)
     plt.xlabel('months after start')
-    plt.legend(loc='best')
-    plt.savefig('../../../../plots/time_series_with_spread/' + title + '.pdf')
+    plt.xlim(xlim)
+    plt.tight_layout()
+    #plt.legend(loc='best')
+    plt.savefig(saveloc + title + '.pdf')
     plt.close()
     return
+
+def running_mean(vec, N):
+    rm = np.zeros(len(vec))
+    for i in range(len(vec)):
+        start = int(i-(N-1)/2)
+        stop = int(i+(N-1)/2)
+        print(start)
+        print(stop)
+        if start<0:
+            rm[i] = np.nanmean(vec[0:stop+1])
+        elif stop>len(vec):
+            rm[i] = np.nanmean(vec[start:])
+        else:
+            rm[i] = np.nanmean(vec[start:stop+1])
+    return rm
 
 def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
     xstr = 'dimensionality' if len(xvar)==0 else xvar
@@ -222,15 +242,86 @@ def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim
         y = df[metric + '_' + ystr].values
         avgs_y = df.groupby(xstr).median()[metric + '_' + ystr].values
         avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 4] = float('nan')
-    plt.figure(figsize=(3.15,3))
-    plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.2, zorder=0)
+    plt.figure(figsize=(3.25,3))
+    #plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.1, zorder=0)
     avgs_x = np.unique(x)
-    plt.scatter(avgs_x, avgs_y, facecolor='cornflowerblue', edgecolor='black', linewidth=1.5, marker='o', s=45, zorder=5)
+    plt.scatter(avgs_x, avgs_y, facecolor='cornflower', edgecolor='black', linewidth=1.5, marker='o', s=60, zorder=5)
     if (len(subset)==2) | (len(subset)==5): # model only
         plt.axvline(np.nanmean(x), c='silver', linewidth=0.5, zorder=0)
         plt.axhline(np.nanmean(y), c='silver', linewidth=0.5, zorder=0.5)
     #plt.ylim([ylim[0], np.nanmax(y)])
     plt.ylim(ylim)
+
+    if (ystr=='diff'):
+        plt.axhline(0, c='k', linewidth=0.5, zorder=0)
+        plt.axhspan(0, max(y), alpha=0.3, facecolor='deepskyblue', zorder=0)
+        plt.axhspan(min(y), 0, alpha=0.2, facecolor='lightcoral', zorder=0)
+
+    if metric=='hist_int':
+        if ystr=='forecast':
+            plt.ylabel('Histogram intersection \n(Average forecast)')
+        elif ystr=='diff':
+            plt.ylabel('Degradation')
+        else:
+            plt.ylabel('Histogram\nintersection (%s)' % ystr)
+    elif metric=='RMSE':
+        plt.ylabel('RMSE (%s)' % ystr)
+    else:
+        plt.ylabel(metric + '_' + ystr)
+
+    pred_y_best_fit = float('nan')
+    rmse = [float('nan'), float('nan'), float('nan')]
+    try:
+        xfit = avgs_x
+        yfit = avgs_y
+        inds = (~np.isnan(xfit)) & (~np.isnan(yfit))
+
+        degree = [0, 1, 4]
+        pred_y = [[],[],[]]
+        for i in range(len(degree)):
+            if degree[i]==0:
+                coef = np.array([0, np.nanmean(yfit[inds])])
+            else:
+                coef = np.polyfit(xfit[inds], yfit[inds], degree[i])
+            poly1d_fn = np.poly1d(coef)
+            pred_y[i] = poly1d_fn(xfit[inds])
+            rmse[i] = np.sqrt(mean_squared_error(yfit[inds], pred_y[i]))
+        pred_y_best_fit = pred_y[np.argmin(rmse)]
+        #plt.plot(xfit[inds], pred_y_best_fit, linewidth=1.5, c='k', zorder=1)
+    except Exception as e:
+        print(e)
+
+    plt.xlabel('Dimensionality') if len(xvar)==0 else plt.xlabel(xvar)
+    plt.tight_layout()
+    plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
+    plt.close()
+    return xfit[inds], pred_y_best_fit, rmse
+
+def plot_heatmap_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
+    xstr = 'dimensionality' if len(xvar)==0 else xvar
+    x = df[xstr].values
+
+    if (ystr=='diff'):
+        y = df[metric + '_forecast'].values - df[metric + '_calibration'].values
+        avgs_y = df.groupby(xstr).median()[metric + '_forecast'].values - df.groupby(xstr).median()[metric + '_calibration'].values
+    else:
+        y = df[metric + '_' + ystr].values
+        avgs_y = df.groupby(xstr).median()[metric + '_' + ystr].values
+        avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 4] = float('nan')
+
+    keep = (np.isfinite(x) & (np.isfinite(y)))
+    xk = x[keep]
+    yk = y[keep]
+    plt.figure(figsize=(4,4))
+    plt.hist2d(x[keep], y[keep], bins=(40,80), cmap=LinearSegmentedColormap.from_list("", ["white","gainsboro","gray"]), alpha=0.9, cmin=1)
+    #plt.hexbin(x[keep], y[keep], mincnt=1, cmap=plt.cm.Greys, gridsize=(25,20), alpha=0.5, edgecolors='')
+
+    avgs_x = np.unique(x)
+
+    plt.scatter(avgs_x, avgs_y, facecolor='cornflowerblue', edgecolor='black', linewidth=1.5, marker='o', s=60, zorder=5)
+    plt.ylim(ylim)
+    plt.xlim([1,41])
+
     if metric=='hist_int':
         if ystr=='forecast':
             plt.ylabel('Histogram intersection \n(Average forecast)')
@@ -244,28 +335,168 @@ def plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim
     pred_y_best_fit = float('nan')
     rmse = [float('nan'), float('nan'), float('nan')]
     try:
-        inds = (~np.isnan(avgs_x)) & (~np.isnan(avgs_y))
+        xfit = avgs_x
+        yfit = avgs_y
+        inds = (~np.isnan(xfit)) & (~np.isnan(yfit))
 
         degree = [0, 1, 4]
         pred_y = [[],[],[]]
         for i in range(len(degree)):
             if degree[i]==0:
-                coef = np.array([0, np.nanmean(avgs_y[inds])])
+                coef = np.array([0, np.nanmean(yfit[inds])])
             else:
-                coef = np.polyfit(avgs_x[inds], avgs_y[inds], degree[i])
+                coef = np.polyfit(xfit[inds], yfit[inds], degree[i])
             poly1d_fn = np.poly1d(coef)
-            pred_y[i] = poly1d_fn(avgs_x[inds])
-            rmse[i] = np.sqrt(mean_squared_error(avgs_y[inds], pred_y[i]))
+            pred_y[i] = poly1d_fn(xfit[inds])
+            rmse[i] = np.sqrt(mean_squared_error(yfit[inds], pred_y[i]))
         pred_y_best_fit = pred_y[np.argmin(rmse)]
-        plt.plot(avgs_x[inds], pred_y_best_fit, linewidth=1.5, c='k', zorder=1)
+        #plt.plot(xfit[inds], pred_y_best_fit, linewidth=1.5, c='k', zorder=1)
     except Exception as e:
         print(e)
 
-    plt.xlabel('Dimensionality') if len(xvar)==0 else plt.xlabel('prior minus posterior dimensionality')
+    plt.xlabel('Dimensionality') if len(xvar)==0 else plt.xlabel(xvar)
     plt.tight_layout()
-    plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_wfit.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
+    plt.savefig('../../plots/heatmaps/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_heatmap.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
     plt.close()
-    return avgs_x[inds], pred_y_best_fit, rmse
+    return
+
+def plot_shading_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
+    xstr = 'dimensionality' if len(xvar)==0 else xvar
+    x = df[xstr].values
+
+    if (ystr=='diff'):
+        y = df[metric + '_forecast'].values - df[metric + '_calibration'].values
+        avgs_y = df.groupby(xstr).median()[metric + '_forecast'].values - df.groupby(xstr).median()[metric + '_calibration'].values
+        avgs_y_75 = df.groupby(xstr).quantile(.75)[metric + '_forecast'].values - df.groupby(xstr).quantile(.75)[metric + '_calibration'].values
+        avgs_y_25 = df.groupby(xstr).quantile(.25)[metric + '_forecast'].values - df.groupby(xstr).quantile(.25)[metric + '_calibration'].values
+        avgs_y_95 = df.groupby(xstr).quantile(.95)[metric + '_forecast'].values - df.groupby(xstr).quantile(.95)[metric + '_calibration'].values
+        avgs_y_5 = df.groupby(xstr).quantile(.05)[metric + '_forecast'].values - df.groupby(xstr).quantile(.05)[metric + '_calibration'].values
+    else:
+        y = df[metric + '_' + ystr].values
+        avgs_y = df.groupby(xstr).median()[metric + '_' + ystr].values
+        avgs_y_75 = df.groupby(xstr).quantile(.75)[metric + '_' + ystr].values
+        avgs_y_25 = df.groupby(xstr).quantile(.25)[metric + '_' + ystr].values
+        avgs_y_95 = df.groupby(xstr).quantile(.95)[metric + '_' + ystr].values
+        avgs_y_5 = df.groupby(xstr).quantile(.05)[metric + '_' + ystr].values
+        avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 4] = float('nan')
+
+    avgs_x = np.unique(x)
+    plt.figure(figsize=(4,4))
+    plt.fill_between(avgs_x, avgs_y_5, avgs_y_95, facecolor='whitesmoke', edgecolor='', alpha=0.6)
+    plt.fill_between(avgs_x, avgs_y_25, avgs_y_75, facecolor='gainsboro', edgecolor='', alpha=0.9)
+    plt.scatter(avgs_x, avgs_y, facecolor='dodgerblue', edgecolor='black', linewidth=1, marker='s', s=25, zorder=5)
+    plt.ylim(ylim)
+    plt.xlim([1,40]) if subset=='' else plt.xlim([1,40])
+
+    if metric=='hist_int':
+        if ystr=='forecast':
+            plt.ylabel('Average forecast skill')
+        else:
+            plt.ylabel('Histogram\nintersection (%s)' % ystr)
+    elif metric=='RMSE':
+        plt.ylabel('RMSE (%s)' % ystr)
+    else:
+        plt.ylabel(metric + '_' + ystr)
+
+    pred_y_best_fit = float('nan')
+    rmse = [float('nan'), float('nan'), float('nan')]
+
+    try:
+        xfit = avgs_x
+        yfit = avgs_y
+        inds = (~np.isnan(xfit)) & (~np.isnan(yfit))
+
+        degree = [0, 1, 4]
+        pred_y = [[],[],[]]
+        for i in range(len(degree)):
+            if degree[i]==0:
+                coef = np.array([0, np.nanmean(yfit[inds])])
+            else:
+                coef = np.polyfit(xfit[inds], yfit[inds], degree[i])
+            poly1d_fn = np.poly1d(coef)
+            pred_y[i] = poly1d_fn(xfit[inds])
+            rmse[i] = np.sqrt(mean_squared_error(yfit[inds], pred_y[i]))
+        pred_y_best_fit = pred_y[np.argmin(rmse)]
+        #plt.plot(xfit[inds], pred_y_best_fit, linewidth=1.5, c='k', zorder=1)
+    except Exception as e:
+        print(e)
+
+    plt.xlabel('Effective complexity') if len(xvar)==0 else plt.xlabel(xvar)
+    plt.tight_layout()
+    plt.savefig('../../plots/heatmaps/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_heatmap.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
+    plt.close()
+    return
+
+def plot_density_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,1], subset='', var='NEE', xvar=''):
+    xstr = 'dimensionality' if len(xvar)==0 else xvar
+    x = df[xstr].values
+
+    if (ystr=='diff'):
+        y = df[metric + '_forecast'].values - df[metric + '_calibration'].values
+        avgs_y = df.groupby(xstr).median()[metric + '_forecast'].values - df.groupby(xstr).median()[metric + '_calibration'].values
+    else:
+        y = df[metric + '_' + ystr].values
+        avgs_y = df.groupby(xstr).median()[metric + '_' + ystr].values
+        avgs_y[df.groupby(xstr).count()[metric + '_' + ystr].values < 4] = float('nan')
+
+    keep = (np.isfinite(x) & (np.isfinite(y)))
+    xk = x[keep]
+    yk = y[keep]
+    plt.figure(figsize=(4,4))
+
+    xy = np.vstack([xk,yk])
+    z = gaussian_kde(xy)(xy)
+
+    # Sort the points by density, so that the densest points are plotted last
+    idx = z.argsort()
+    x_density, y_density, z_density = xk[idx], yk[idx], z[idx]
+    plt.scatter(x_density, y_density, c=z_density, edgecolor='',
+        cmap=LinearSegmentedColormap.from_list("", ["white","whitesmoke","gainsboro","gray","dimgray"]), marker='o', alpha=0.25, s=20)
+
+    avgs_x = np.unique(x)
+
+    plt.scatter(avgs_x, avgs_y, facecolor='dodgerblue', edgecolor='black', linewidth=1.5, marker='o', s=50, zorder=5)
+    plt.ylim(ylim)
+    plt.xlim([1,41]) if subset=='' else plt.xlim([1,40])
+
+    if metric=='hist_int':
+        if ystr=='forecast':
+            plt.ylabel('Average forecast skill')
+        else:
+            plt.ylabel('Histogram\nintersection (%s)' % ystr)
+    elif metric=='RMSE':
+        plt.ylabel('RMSE (%s)' % ystr)
+    else:
+        plt.ylabel(metric + '_' + ystr)
+
+    pred_y_best_fit = float('nan')
+    rmse = [float('nan'), float('nan'), float('nan')]
+
+    try:
+        xfit = avgs_x
+        yfit = avgs_y
+        inds = (~np.isnan(xfit)) & (~np.isnan(yfit))
+
+        degree = [0, 1, 4]
+        pred_y = [[],[],[]]
+        for i in range(len(degree)):
+            if degree[i]==0:
+                coef = np.array([0, np.nanmean(yfit[inds])])
+            else:
+                coef = np.polyfit(xfit[inds], yfit[inds], degree[i])
+            poly1d_fn = np.poly1d(coef)
+            pred_y[i] = poly1d_fn(xfit[inds])
+            rmse[i] = np.sqrt(mean_squared_error(yfit[inds], pred_y[i]))
+        pred_y_best_fit = pred_y[np.argmin(rmse)]
+        #plt.plot(xfit[inds], pred_y_best_fit, linewidth=1.5, c='k', zorder=1)
+    except Exception as e:
+        print(e)
+
+    plt.xlabel('Dimensionality') if len(xvar)==0 else plt.xlabel(xvar)
+    plt.tight_layout()
+    plt.savefig('../../plots/heatmaps/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_density.pdf') if len(xvar)==0 else plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_' + xvar + '.pdf')
+    plt.close()
+    return
 
 def plot_scatter_x_dimensionality_y_colors(df, metric='hist_int', ystr='forecast', xstr='dimensionality', col_by='prior_minus_post', ylim=[0,1], subset='', var='NEE'):
     x = df[xstr].values
@@ -307,6 +538,13 @@ def plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='forec
     grp_size = 20
     grps = df.groupby('dimensionality')
 
+    xstr = 'dimensionality'
+    x = df[xstr].values
+    avgs_y_75 = df.groupby(xstr).quantile(.75)[metric + '_' + ystr].values
+    avgs_y_25 = df.groupby(xstr).quantile(.25)[metric + '_' + ystr].values
+    avgs_y_95 = df.groupby(xstr).quantile(.95)[metric + '_' + ystr].values
+    avgs_y_5 = df.groupby(xstr).quantile(.05)[metric + '_' + ystr].values
+
     avgs_y_bootstrap = np.ones((1000, grps.ngroups))*np.nan
     for iter in range(1000):
         print(iter)
@@ -317,7 +555,7 @@ def plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='forec
         avgs_x = []
         avgs_y = []
 
-        for i in range(int(grps.ngroups)):
+        for i in range(int(df['dimensionality'].min()), int(df['dimensionality'].max()+1)):
             x.extend(grps_resampled.loc[i]['dimensionality'].values)
             avgs_x.extend([grps_resampled.loc[i]['dimensionality'].median()])
 
@@ -329,10 +567,12 @@ def plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='forec
                 avgs_y.extend([grps_resampled.loc[i][metric + '_' + ystr].median()])
         avgs_y_bootstrap[iter,:] = avgs_y
 
-    plt.figure(figsize=(5,5))
-    plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.4)
+    plt.figure(figsize=(4,4))
+    plt.fill_between(avgs_x, avgs_y_5, avgs_y_95, facecolor='whitesmoke', edgecolor='', alpha=0.6)
+    plt.fill_between(avgs_x, avgs_y_25, avgs_y_75, facecolor='gainsboro', edgecolor='', alpha=0.9)
+    #plt.scatter(x, y, color='gainsboro', marker='.', alpha=0.4)
     #plt.scatter(avgs_x, avgs_y, facecolor='cornflowerblue', edgecolor='black', linewidth=1.5, marker='o', s=60)
-    plt.scatter(avgs_x, np.nanmean(avgs_y_bootstrap, axis=0), facecolor='cornflowerblue', edgecolor='black', linewidth=1.5, marker='o', s=60, zorder=2)
+    plt.scatter(avgs_x, np.nanmean(avgs_y_bootstrap, axis=0), facecolor='dodgerblue', edgecolor='black', linewidth=1.5, marker='o', s=50, zorder=2)
     plt.errorbar(avgs_x, np.nanmean(avgs_y_bootstrap, axis=0), yerr=np.nanstd(avgs_y_bootstrap, axis=0), c='k', linestyle='none', zorder=1)
     if (len(subset)==2) | (len(subset)==5): # model only
         plt.axvline(np.nanmean(x), c='silver', linewidth=0.5, zorder=0)
@@ -340,10 +580,11 @@ def plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='forec
     #plt.ylim([ylim[0], np.nanmax(y)])
     plt.ylim(ylim)
     if metric=='hist_int':
-        plt.ylabel('histogram overlap (%s)' % ystr)
+        plt.ylabel('Average forecast skill')
     else:
         plt.ylabel(metric + '_' + ystr)
-    plt.xlabel('dimensionality')
+    plt.xlabel('Effective complexity')
+    plt.tight_layout()
     plt.savefig('../../plots/scatters/dimensionality/' + var + '/' + metric + '_' + ystr + '_' + subset + '_resampled.pdf')
     plt.close()
     return
@@ -487,8 +728,17 @@ def plot_scatter_x_maxdiff_y_process(max_diff, processes, ystr='forecast', metri
     return
 
 def run_plots(df, subset_str='', var='NEE'):
+    print(subset_str)
     plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,0.8], subset=subset_str, var=var)
     plot_scatter_x_dimensionality_y(df, metric='RMSE', ystr='forecast', ylim=[0,3], subset=subset_str, var=var)
+
+    try:
+        plot_shading_x_dimensionality_y(df, metric='hist_int', ystr='forecast', ylim=[0,0.65], subset=subset_str, var=var)
+        plot_scatter_x_dimensionality_y_resampled(df, metric='hist_int', ystr='forecast', ylim=[0,0.65], subset=subset_str, var=var)
+
+    except Exception as e:
+        print(e)
+
     #plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='diff', subset=subset_str, ylim=[-0.3,0.3], var=var)
 
     '''plot_scatter_x_dimensionality_y(df, metric='hist_int', ystr='forecast', subset=subset_str, ylim=[0,0.8], var=var, xvar='prior_minus_post')
@@ -540,7 +790,7 @@ def plot_density(df, subset_main='', subset_sub='', title='', subset_sub_list=[]
     return
 
 def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', subset_sub_list=[], var='NEE', zero_point='default', fractional=False):
-    plt.figure(figsize=(4.5,7))
+    plt.figure(figsize=(4.25,6.5))
 
     pars = raw_complexity()
 
@@ -576,11 +826,11 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
                             'c' : 'NEE+LAI+biomass',
                             'd' : 'LAI',
                             'e' : 'LAI+biomass',
-                            'f' : 'no obs'
+                            'f' : 'No obs'
                 }
                 for sub in subset_sub:
                     to_plot_sub = [str for str in to_plot_main if str.endswith(sub)]
-                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=50, alpha=0.8, label='Mean of ' + switcher[sub].replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=50, alpha=0.8, label=switcher[sub].replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
             elif 'num_exp' in title:
                 switcher = {'exp1' : '50% error',
                             'exp2' : '100% error',
@@ -589,22 +839,22 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
                 }
                 for sub in subset_sub:
                     to_plot_sub = subset_list_by_substring(to_plot_main, sub)
-                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=50, alpha=0.8, label='Mean of ' + switcher[sub].replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=50, alpha=0.8, label=switcher[sub].replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
 
             else:
                 for sub in subset_sub:
                     to_plot_sub = subset_list_by_substring(to_plot_main, sub)
-                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=50, alpha=0.8, label='Mean of ' + sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
+                    plt.scatter((normalize_val_diff - normalize_val_coef*df.loc[to_plot_sub]['dimensionality'].mean())/normalize_val_div, model_count, edgecolor='k', s=50, alpha=0.8, label=sub.replace('_','') + ' runs' if model_count==len(subset_main)-1 else "")
 
         plt.axhline(y=model_count+0.5, color='darkgray', linewidth=0.5)
 
         model_count += 1
 
     plt.ylim([-0.5,model_count-0.5])
-    plt.xlim([5,None]) if zero_point=='default' else plt.xlim([None,None])
+    plt.xlim([6,44]) if zero_point=='default' else plt.xlim([None,None])
     plt.ylabel('Model')
     if zero_point=='default':
-        plt.xlabel('Dimensionality')
+        plt.xlabel('Effective complexity')
     else:
         if fractional:
             plt.xlabel('Dimensions reduced, normalized to prior (%)')
@@ -612,14 +862,14 @@ def plot_dimensionality_medians(df, subset_main='', subset_sub='', title='', sub
             plt.xlabel('Dimensions reduced\n(Prior minus posterior)')
     plt.yticks(np.arange(model_count), subset_main)
     loc = 'lower right' if zero_point=='default' else 'best'
-    plt.legend(loc=loc, facecolor='white', edgecolor='black', framealpha=1, markerscale=0.85, prop={'size': 8})
+    plt.legend(loc=loc, facecolor='white', edgecolor='black', framealpha=1, markerscale=0.85, prop={'size': 9.5})
     plt.tight_layout()
     plt.savefig('../../plots/dists/' + var + '/summary_' + title + '_' + zero_point + '_' + str(fractional) + '.pdf')
     plt.close()
     return
 
 def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE', type=''):
-    plt.figure(figsize=(4.5,7)) if len(subset_main)>1 else plt.figure(figsize=(2,2.5))
+    plt.figure(figsize=(4.25,6.5)) if len(subset_main)>1 else plt.figure(figsize=(2,2.5))
     model_count = 0
 
     cmap = matplotlib.cm.get_cmap('Set2')
@@ -688,14 +938,15 @@ def plot_dimensionality_reduction_bar(df, subset_main='', title='', var='NEE', t
         model_count += 1
 
     plt.ylim([-0.5,model_count-0.5])
+    plt.xlim([6,44]) if title!='bar_full' else plt.xlim([None, None])
     plt.ylabel('Model') if len(subset_main)>1 else plt.ylabel('')
     if type=='constrainability':
         plt.xlabel('Range of constrainability \n(number of dimensions)')
     elif type=='dimensionality':
         if title=='lines':
-            plt.xlabel('Dimensionality')
+            plt.xlabel('Effective complexity')
         else:
-            plt.xlabel('Attributed dimensionality range') if len(subset_main)>1 else plt.xlabel('Total dimensionality \nrange')
+            plt.xlabel('Attributed dimensionality range') if len(subset_main)>1 else plt.xlabel('Total complexity \nrange')
     else:
         plt.xlabel('Range of normalized dimensionality reduction (%)')
 
